@@ -598,7 +598,7 @@ function showLogin() {
       const card = document.getElementById('loginCard');
       if (card) {
         card.classList.add('animate-in');
-        card.querySelectorAll('.login-cross-icon, .login-church-name, .login-system-title, .login-divider, .login-welcome, .btn-google, .btn-guest, .login-hint').forEach(el => {
+        card.querySelectorAll('.login-cross-icon, .login-church-name, .login-system-title, .login-divider, .login-welcome, .btn-google, .btn-apple, .btn-guest, .login-hint').forEach(el => {
           el.classList.add('animate-in');
         });
       }
