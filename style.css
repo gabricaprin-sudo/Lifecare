@@ -918,6 +918,138 @@ body {
 
 
 
+/* ============================================================
+   TIMESTAMP SECTION (Add/Edit Employee)
+   ============================================================ */
+.timestamp-section {
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 16px;
+  margin-bottom: 16px;
+}
+.timestamp-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.timestamp-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.timestamp-toggle {
+  display: flex;
+  background: white;
+  border-radius: 10px;
+  padding: 3px;
+  border: 2px solid var(--border);
+  gap: 2px;
+}
+.ts-option {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-family: 'Tajawal', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: var(--text-muted);
+  user-select: none;
+}
+.ts-option.active {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 2px 8px rgba(26,39,68,0.25);
+}
+.timestamp-inputs {
+  transition: all 0.3s ease;
+}
+.timestamp-inputs.hidden {
+  display: none;
+}
+.ts-row {
+  display: flex;
+  gap: 10px;
+}
+.ts-field {
+  flex: 1;
+}
+.ts-field label {
+  display: block;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: 4px;
+}
+.timestamp-auto-msg {
+  background: rgba(46,204,113,0.1);
+  color: var(--green);
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+}
+[data-theme="dark"] .timestamp-toggle {
+  background: #131c30;
+  border-color: #2a3650;
+}
+[data-theme="dark"] .timestamp-section {
+  background: #131c30;
+}
+
+/* ============================================================
+   OFFLINE BADGE HEADER
+   ============================================================ */
+.offline-badge-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(243,156,18,0.15);
+  color: var(--orange);
+  border-radius: 10px;
+  padding: 6px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: default;
+  animation: pulseOffline 2s ease-in-out infinite;
+}
+@keyframes pulseOffline {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.7; }
+}
+
+/* ============================================================
+   RESPONSIVE DAY SELECTOR (6 days)
+   ============================================================ */
+.day-selector {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+.day-selector::-webkit-scrollbar { display: none; }
+.day-btn {
+  flex: 1;
+  min-width: 52px;
+  padding: 10px 6px;
+  border: 2px solid var(--border);
+  background: white;
+  border-radius: 12px;
+  font-family: 'Tajawal', sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: var(--tap-target);
+  touch-action: manipulation;
+  white-space: nowrap;
+}
+
 /* Grade Filter Buttons */
 .grade-filter-btns {
   display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap;
