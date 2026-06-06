@@ -12,6 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;700&family=Noto+Naskh+Arabic:wght@400;600&family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
 <base target="_blank">
+<base target="_blank">
 </head>
 <body>
   <div id="app">
@@ -72,11 +73,7 @@
           <span class="btn-text">تسجيل الدخول بـ Google</span>
         </button>
 
-        <button id="appleSignIn" class="btn-apple">
-          <svg class="apple-logo" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.21-1.98 1.07-3.11-1.05.05-2.31.7-3.06 1.66-.68.87-1.27 2.27-1.11 3.39 1.17.09 2.36-.59 3.1-1.94z"/></svg>
-          <span class="btn-spinner"></span>
-          <span class="btn-text">تسجيل الدخول بـ Apple</span>
-        </button>
+        
 </div>
     </div>
 
@@ -143,12 +140,7 @@
             <div id="todayServiceBadge" class="service-badge"></div>
           </div>
 
-          <div class="grade-filter-btns" id="homeGradeFilters">
-            <button class="grade-filter-btn active" data-grade="">الكل <span class="count" id="homeFilterCountAll">0</span></button>
-            <button class="grade-filter-btn" data-grade="قسم الإنتاج">أولى <span class="count" id="homeFilterCount1">0</span></button>
-            <button class="grade-filter-btn" data-grade="قسم الصيانة">تانية <span class="count" id="homeFilterCount2">0</span></button>
-            <button class="grade-filter-btn" data-grade="قسم الإدارة">تالتة <span class="count" id="homeFilterCount3">0</span></button>
-          </div>
+          
 
           <div class="stats-grid">
             <div class="stat-card blue">
@@ -163,30 +155,10 @@
               <div class="stat-num" id="statAbsentToday">0</div>
               <div class="stat-label">الغائبين اليوم</div>
             </div>
-            <div class="stat-card purple">
-              <div class="stat-num" id="statAvgRating">-</div>
-              <div class="stat-label">متوسط التقييم</div>
-            </div>
+            
           </div>
 
-          <div class="section-title">إحصائيات مميزة</div>
-          <div class="stats-grid">
-            <div class="stat-card gold">
-              <div class="stat-icon">&#127942;</div>
-              <div class="stat-value" id="bestGrade">-</div>
-              <div class="stat-sublabel" id="bestGradePercent">أفضل قسم</div>
-            </div>
-            <div class="stat-card teal">
-              <div class="stat-icon">&#128218;</div>
-              <div class="stat-value" id="topActivityName">-</div>
-              <div class="stat-sublabel" id="topActivityCount">أكثر قسم حضوراً</div>
-            </div>
-            <div class="stat-card rose">
-              <div class="stat-icon">&#11088;</div>
-              <div class="stat-value" id="mostRegularGirl">-</div>
-              <div class="stat-sublabel" id="mostRegularPercent">أكثر موظف انتظاماً</div>
-            </div>
-          </div>
+          
 
           <div class="section-title">الأكثر حضورًا هذا الشهر</div>
           <div id="topAttendees" class="top-list"></div>
@@ -206,12 +178,7 @@
             <label for="attendanceDate">التاريخ:</label>
             <input type="date" id="attendanceDate" class="date-input">
           </div>
-          <div class="activities-tabs">
-            <button class="act-tab active" data-activity="إنتاج">&#127981; إنتاج</button>
-            <button class="act-tab" data-activity="صيانة">&#128295; صيانة</button>
-            <button class="act-tab" data-activity="إدارة">&#128188; إدارة</button>
-            <button class="act-tab" data-activity="جودة">&#9989; جودة</button>
-          </div>
+          
 
           <!-- Attendance Search Bar -->
           <div class="search-bar-wrap" style="margin-top:4px;">
@@ -238,12 +205,7 @@
             <input type="text" id="girlsSearch" class="search-bar" placeholder="&#128269; ابحث عن موظف للتعديل أو الحذف..." autocomplete="off">
           </div>
           <div class="girls-filter-row">
-            <div class="grade-filter-btns" id="girlsGradeFilters">
-              <button class="grade-filter-btn active" data-grade="">الكل <span class="count" id="girlsFilterCountAll">0</span></button>
-              <button class="grade-filter-btn" data-grade="قسم الإنتاج">أولى <span class="count" id="girlsFilterCount1">0</span></button>
-              <button class="grade-filter-btn" data-grade="قسم الصيانة">تانية <span class="count" id="girlsFilterCount2">0</span></button>
-              <button class="grade-filter-btn" data-grade="قسم الإدارة">تالتة <span class="count" id="girlsFilterCount3">0</span></button>
-            </div>
+            
             <button class="btn-add-girl" id="addGirlBtn">+ إضافة</button>
           </div>
           <div id="girlsList" class="girls-list"></div>
@@ -273,17 +235,10 @@
             <button class="time-filter-tab" data-period="year">هذه السنة</button>
             <button class="time-filter-tab" data-period="all">الكل</button>
           </div>
-          <!-- Grade filter for stats -->
-          <div class="stats-grade-filter" id="statsGradeFilter">
-            <button class="stats-grade-btn active" data-grade="">الكل</button>
-            <button class="stats-grade-btn" data-grade="قسم الإنتاج">قسم الإنتاج</button>
-            <button class="stats-grade-btn" data-grade="قسم الصيانة">قسم الصيانة</button>
-            <button class="stats-grade-btn" data-grade="قسم الإدارة">قسم الإدارة</button>
-          </div>
+          
           <div class="big-stats-grid" id="bigStatsGrid"></div>
 
-          <div class="section-title">الحضور حسب النشاط <span id="activityStatsPeriod" style="font-size:13px;color:var(--text-muted);font-weight:400;">(هذا الشهر)</span> <span id="activityStatsGrade" style="font-size:12px;color:var(--accent);font-weight:700;"></span></div>
-          <div class="activity-stats-grid" id="activityStatsGrid"></div>
+          
 
           <div class="section-title">توزيع الغيابات</div>
           <div id="absenceChart" class="absence-chart"></div>
@@ -384,15 +339,7 @@
             <label for="girlPhone">رقم الهاتف</label>
             <input type="tel" id="girlPhone" class="form-input" placeholder="رقم التليفون" dir="ltr">
           </div>
-          <div class="form-group">
-            <label for="girlGrade">القسم / الوظيفة *</label>
-            <select id="girlGrade" class="form-input">
-              <option value="">اختر القسم</option>
-              <option value="قسم الإنتاج">قسم الإنتاج</option>
-              <option value="قسم الصيانة">قسم الصيانة</option>
-              <option value="قسم الإدارة">قسم الإدارة</option>
-            </select>
-          </div>
+          <input type="hidden" id="girlGrade" value="موظف">
           <div class="form-group">
             <label for="girlNotes">ملاحظات</label>
             <textarea id="girlNotes" class="form-input" rows="3" placeholder="أي ملاحظات..."></textarea>
@@ -447,16 +394,7 @@
             <button class="attend-btn present" data-status="حاضر" type="button">&#10003; حاضر</button>
             <button class="attend-btn absent" data-status="غائب" type="button">&#10007; غائب</button>
           </div>
-          <div id="ratingSection" class="rating-section">
-            <label>التقييم:</label>
-            <div class="stars-input" id="starsInput">
-              <span class="star" data-val="1" role="button" aria-label="1 نجمة">&#9733;</span>
-              <span class="star" data-val="2" role="button" aria-label="2 نجمة">&#9733;</span>
-              <span class="star" data-val="3" role="button" aria-label="3 نجوم">&#9733;</span>
-              <span class="star" data-val="4" role="button" aria-label="4 نجوم">&#9733;</span>
-              <span class="star" data-val="5" role="button" aria-label="5 نجوم">&#9733;</span>
-            </div>
-          </div>
+          
           <div class="form-group">
             <label for="attendanceNotes">ملاحظات:</label>
             <textarea id="attendanceNotes" class="form-input" rows="3" placeholder="ملاحظات..."></textarea>
