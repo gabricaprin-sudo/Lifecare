@@ -159,6 +159,140 @@ const DOM = {
 };
 
 // ============================================================
+// OFFLINE SYNC QUEUE
+// ============================================================
+const OfflineQueue = {
+  queue: [],
+  isSyncing: false,
+  lastOnline: true,
+
+  async init() {
+    // Load any previously queued items from IndexedDB
+    try {
+      const saved = await IDB.getAll('pendingSync');
+      this.queue = saved || [];
+    } catch (e) { console.warn('OfflineQueue init failed:', e); }
+  },
+
+  async add(operation) {
+    const op = {
+      id: 'op_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+      type: operation.type, // 'saveGirl', 'saveAttendance', 'deleteGirl', 'deleteAttendance'
+      data: operation.data,
+      timestamp: Date.now(),
+      retries: 0
+    };
+    this.queue.push(op);
+    try { await IDB.add('pendingSync', op); } catch (e) {}
+    showToast('تم الحفظ محلياً — سيتم الرفع عند توفر الإنترنت', 'warning');
+    this.trySync();
+  },
+
+  async remove(opId) {
+    this.queue = this.queue.filter(o => o.id !== opId);
+    try { await IDB.delete('pendingSync', opId); } catch (e) {}
+  },
+
+  async trySync() {
+    if (this.isSyncing || !navigator.onLine || !firebaseReady || !window._fb) return;
+    if (this.queue.length === 0) return;
+
+    this.isSyncing = true;
+    const toSync = [...this.queue];
+
+    for (const op of toSync) {
+      try {
+        switch (op.type) {
+          case 'saveGirl': {
+            const { doc, setDoc } = window._fb;
+            await setDoc(doc(db, 'girls', op.data.id), op.data);
+            break;
+          }
+          case 'saveAttendance': {
+            const { doc, setDoc } = window._fb;
+            await setDoc(doc(db, 'attendance', op.data.id), op.data);
+            break;
+          }
+          case 'saveBatchAttendance': {
+            const { writeBatch, doc } = window._fb;
+            const batch = writeBatch(db);
+            op.data.records.forEach(rec => {
+              batch.set(doc(db, 'attendance', rec.id), rec);
+            });
+            await batch.commit();
+            break;
+          }
+          case 'deleteGirl': {
+            const { doc, setDoc } = window._fb;
+            await setDoc(doc(db, 'girls', op.data.id), op.data, { merge: true });
+            break;
+          }
+          case 'deleteAttendance': {
+            const { doc, deleteDoc } = window._fb;
+            await deleteDoc(doc(db, 'attendance', op.data.key));
+            break;
+          }
+          case 'saveHistory': {
+            const { doc, setDoc } = window._fb;
+            await setDoc(doc(db, 'history', op.data.id), op.data);
+            break;
+          }
+        }
+        await this.remove(op.id);
+      } catch (e) {
+        console.error('Sync operation failed:', op.type, e);
+        op.retries++;
+        if (op.retries >= 5) {
+          await this.remove(op.id); // Drop after 5 retries
+        } else {
+          // Update retry count in IDB
+          try { await IDB.add('pendingSync', op); } catch (e2) {}
+        }
+      }
+    }
+
+    this.isSyncing = false;
+    if (this.queue.length > 0) {
+      setTimeout(() => this.trySync(), 30000); // Retry in 30 seconds
+    } else {
+      showToast('تمت مزامنة جميع البيانات مع السحابة', 'success');
+    }
+  }
+};
+
+// ============================================================
+// ONLINE / OFFLINE HANDLER
+// ============================================================
+function updateOnlineStatus() {
+  const isOnline = navigator.onLine;
+
+  // Header badge
+  const headerBadge = document.getElementById('offlineBadgeHeader');
+  if (headerBadge) {
+    headerBadge.classList.toggle('hidden', isOnline);
+  }
+
+  // Drawer badge
+  const drawerBadge = document.getElementById('offlineBadge');
+  if (drawerBadge) {
+    drawerBadge.style.display = isOnline ? 'none' : 'block';
+  }
+
+  if (isOnline && !OfflineQueue.lastOnline) {
+    // Just came back online
+    showToast('تم استعادة الاتصال — جاري المزامنة...', 'success');
+    OfflineQueue.trySync();
+  } else if (!isOnline && OfflineQueue.lastOnline) {
+    showToast('انقطع الاتصال — العمليات ستُحفظ محلياً', 'warning');
+  }
+
+  OfflineQueue.lastOnline = isOnline;
+}
+
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+
+// ============================================================
 // APP STATE
 // ============================================================
 const state = {
@@ -166,8 +300,8 @@ const state = {
   girls: [],
   attendanceData: {},
   currentPage: 'home',
-  selectedDay: 'السبت',
-  selectedActivity: 'إنتاج',
+  selectedDay: getCurrentServiceDay() || 'السبت',
+  selectedActivity: 'عام',
   currentAttendanceGirlId: null,
   
   editingGirlId: null,
@@ -180,7 +314,7 @@ const state = {
   homeGradeFilter: '',
   girlsGradeFilter: '',
   girlsSearchQuery: '',
-  statsTimeFilter: 'month',
+  statsTimeFilter: 'today', // default: today (matches new button order)
   statsGradeFilter: '',
   longPressTimer: null,
   isLongPress: false,
@@ -193,9 +327,20 @@ const state = {
 };
 
 const HISTORY_PAGE_SIZE = 30;
+// Work days: Saturday through Thursday (6 days). Friday is off.
 const SERVICE_DAYS = { 'السبت': true, 'الأحد': true, 'الاثنين': true, 'الثلاثاء': true, 'الأربعاء': true, 'الخميس': true };
-const SERVICE_DAY_NUMBERS = [0, 1, 2, 3, 4, 6]; // Sun, Mon, Tue, Wed, Thu, Sat (all except Friday=5)
+const SERVICE_DAY_NUMBERS = [0, 1, 2, 3, 4, 6]; // Sun=0, Mon=1, Tue=2, Wed=3, Thu=4, Sat=6 (all except Fri=5)
 const DAY_NAMES = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+
+// Map JS day number (0=Sun..6=Sat) to Arabic work day name
+const JS_DAY_TO_ARABIC = {
+  0: 'الأحد',
+  1: 'الاثنين',
+  2: 'الثلاثاء',
+  3: 'الأربعاء',
+  4: 'الخميس',
+  6: 'السبت'
+};
 const ACTIVITIES = ['عام'];
 const ACTIVITY_ICONS = { 'عام': '&#128204;' };
 const PERIOD_LABELS = { today: 'اليوم', month: 'هذا الشهر', year: 'هذه السنة', all: 'كل الفترات' };
@@ -932,6 +1077,7 @@ if (DOM.addGirlBtn) {
     if (DOM.girlGrade) DOM.girlGrade.value = '';
     if (DOM.girlNotes) DOM.girlNotes.value = '';
     if (DOM.deleteGirlBtn) DOM.deleteGirlBtn.classList.add('hidden');
+    resetTimestampInputs();
     openModal('girlModal');
   });
 }
@@ -946,6 +1092,8 @@ function editGirl(id) {
   if (DOM.girlGrade) DOM.girlGrade.value = g.grade;
   if (DOM.girlNotes) DOM.girlNotes.value = g.notes || '';
   if (DOM.deleteGirlBtn) DOM.deleteGirlBtn.classList.remove('hidden');
+  // Reset timestamp to auto mode for edits
+  resetTimestampInputs();
   openModal('girlModal');
 }
 
@@ -974,24 +1122,36 @@ if (DOM.deleteGirlBtn) {
 
           try {
             const { setDoc, doc, collection, query, where, getDocs, writeBatch } = window._fb;
-            await setDoc(doc(db, 'girls', id), {
+            const deleteData = {
               isDeleted: true, deletedAt: Date.now(),
               deletedBy: state.currentUser?.email || '',
               name: g.name, grade: g.grade
-            }, { merge: true });
+            };
 
-            const attQuery = query(collection(db, 'attendance'), where('girlId', '==', id));
-            const attSnap = await getDocs(attQuery);
-            if (!attSnap.empty) {
-              const docs = attSnap.docs;
-              for (let i = 0; i < docs.length; i += 500) {
-                const batch = writeBatch(db);
-                docs.slice(i, i + 500).forEach(d => batch.delete(d.ref));
-                await batch.commit();
+            if (navigator.onLine) {
+              await setDoc(doc(db, 'girls', id), deleteData, { merge: true });
+
+              const attQuery = query(collection(db, 'attendance'), where('girlId', '==', id));
+              const attSnap = await getDocs(attQuery);
+              if (!attSnap.empty) {
+                const docs = attSnap.docs;
+                for (let i = 0; i < docs.length; i += 500) {
+                  const batch = writeBatch(db);
+                  docs.slice(i, i + 500).forEach(d => batch.delete(d.ref));
+                  await batch.commit();
+                }
               }
+            } else {
+              // Queue for sync when back online
+              await OfflineQueue.add({ type: 'deleteGirl', data: { id, ...deleteData } });
             }
           } catch (e) {
             console.error('Delete girl Firestore error:', e);
+            // Fallback: queue for sync
+            await OfflineQueue.add({
+              type: 'deleteGirl',
+              data: { id, isDeleted: true, deletedAt: Date.now(), deletedBy: state.currentUser?.email || '', name: g.name, grade: g.grade }
+            });
           }
 
           await logHistory('حذف موظف', `${g.name} - ${g.grade}`);
@@ -1010,7 +1170,86 @@ if (DOM.deleteGirlBtn) {
 }
 
 // ============================================================
-// SAVE GIRL
+// TIMESTAMP TOGGLE LOGIC
+// ============================================================
+let timestampMode = 'auto'; // 'auto' or 'manual'
+
+function initTimestampToggle() {
+  const toggle = document.getElementById('timestampToggle');
+  const inputs = document.getElementById('timestampInputs');
+  const autoMsg = document.getElementById('timestampAutoMsg');
+  const dateInput = document.getElementById('girlDate');
+  const timeInput = document.getElementById('girlTime');
+
+  if (!toggle) return;
+
+  // Default: auto mode
+  timestampMode = 'auto';
+  updateTimestampUI();
+
+  toggle.addEventListener('click', (e) => {
+    const option = e.target.closest('.ts-option');
+    if (!option) return;
+    timestampMode = option.dataset.mode;
+    updateTimestampUI();
+  });
+
+  function updateTimestampUI() {
+    toggle.querySelectorAll('.ts-option').forEach(opt => {
+      opt.classList.toggle('active', opt.dataset.mode === timestampMode);
+    });
+    if (timestampMode === 'auto') {
+      if (inputs) inputs.classList.add('hidden');
+      if (autoMsg) autoMsg.style.display = 'block';
+    } else {
+      if (inputs) inputs.classList.remove('hidden');
+      if (autoMsg) autoMsg.style.display = 'none';
+      // Set defaults to current date/time if empty
+      if (dateInput && !dateInput.value) {
+        const now = new Date();
+        dateInput.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+      }
+      if (timeInput && !timeInput.value) {
+        const now = new Date();
+        timeInput.value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+      }
+    }
+  }
+}
+
+function getTimestampFromInputs() {
+  if (timestampMode === 'auto') {
+    return Date.now();
+  }
+  const dateInput = document.getElementById('girlDate');
+  const timeInput = document.getElementById('girlTime');
+  if (dateInput && timeInput && dateInput.value && timeInput.value) {
+    const ts = new Date(dateInput.value + 'T' + timeInput.value + ':00').getTime();
+    return isNaN(ts) ? Date.now() : ts;
+  }
+  return Date.now();
+}
+
+function resetTimestampInputs() {
+  const dateInput = document.getElementById('girlDate');
+  const timeInput = document.getElementById('girlTime');
+  if (dateInput) dateInput.value = '';
+  if (timeInput) timeInput.value = '';
+  timestampMode = 'auto';
+  const toggle = document.getElementById('timestampToggle');
+  if (toggle) {
+    toggle.querySelectorAll('.ts-option').forEach(opt => {
+      opt.classList.toggle('active', opt.dataset.mode === 'auto');
+    });
+  }
+  const inputs = document.getElementById('timestampInputs');
+  const autoMsg = document.getElementById('timestampAutoMsg');
+  if (inputs) inputs.classList.add('hidden');
+  if (autoMsg) autoMsg.style.display = 'block';
+}
+
+// ============================================================
+// SAVE GIRL — with offline support & custom timestamp
 // ============================================================
 if (DOM.saveGirlBtn) {
   DOM.saveGirlBtn.addEventListener('click', async () => {
@@ -1023,7 +1262,6 @@ if (DOM.saveGirlBtn) {
       const notes = DOM.girlNotes ? DOM.girlNotes.value.trim() : '';
 
       if (!name) { showToast('الرجاء إدخال اسم الموظف', 'error'); return; }
-      
 
       const normalizedName = normalizeName(name);
       const existingGirl = state.girls.find(g =>
@@ -1032,11 +1270,13 @@ if (DOM.saveGirlBtn) {
       if (existingGirl) { showToast('هذه الموظف موجودة بالفعل', 'error'); return; }
 
       const id = state.editingGirlId || 'girl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
+      const customTimestamp = getTimestampFromInputs();
       const now = Date.now();
+
       const girlData = {
         id, name, phone, grade: 'موظف', notes,
-        createdAt: state.editingGirlId ? (state.girls.find(g => g.id === state.editingGirlId)?.createdAt || now) : now,
-        updatedAt: now,
+        createdAt: state.editingGirlId ? (state.girls.find(g => g.id === state.editingGirlId)?.createdAt || customTimestamp) : customTimestamp,
+        updatedAt: customTimestamp,
         updatedBy: state.currentUser?.displayName || 'مستخدم',
         updatedByEmail: state.currentUser?.email || '',
         isDeleted: false
@@ -1048,16 +1288,25 @@ if (DOM.saveGirlBtn) {
         state.girls.push(girlData);
       }
 
-      await logHistory(state.editingGirlId ? 'تعديل موظف' : 'إضافة موظف', `${name} - ${grade}`);
+      await logHistory(state.editingGirlId ? 'تعديل موظف' : 'إضافة موظف', `${name} - موظف`, customTimestamp);
 
-      if (firebaseReady && window._fb) {
-        try { await window._fb.setDoc(window._fb.doc(db, 'girls', id), girlData); }
-        catch (e) { console.error('Save girl Firestore error:', e); }
+      // Online: save directly. Offline: queue for sync.
+      if (navigator.onLine && firebaseReady && window._fb) {
+        try {
+          await window._fb.setDoc(window._fb.doc(db, 'girls', id), girlData);
+        } catch (e) {
+          console.error('Save girl Firestore error:', e);
+          // If failed, queue for later
+          await OfflineQueue.add({ type: 'saveGirl', data: girlData });
+        }
+      } else {
+        await OfflineQueue.add({ type: 'saveGirl', data: girlData });
       }
 
       closeModal('girlModal');
       showToast(state.editingGirlId ? 'تم تعديل البيانات' : 'تمت إضافة الموظف', 'success');
       state.editingGirlId = null;
+      resetTimestampInputs();
       renderPage();
     } finally {
       state.savingGirl = false;
@@ -1180,10 +1429,10 @@ if (DOM.shareProfileBtn) {
 // ============================================================
 // ATTENDANCE PAGE — FIXED: Reliable auto-absence on service days
 // ============================================================
+// Returns the Arabic work day name for today, or null if today is Friday (non-working day)
 function getCurrentServiceDay() {
   const dayOfWeek = new Date().getDay();
-  const dayMap = { 6: 'السبت', 1: 'الاثنين', 3: 'الاربعاء' };
-  return dayMap[dayOfWeek] || null;
+  return JS_DAY_TO_ARABIC[dayOfWeek] || null;
 }
 
 function isServiceDayDate(dateStr) {
@@ -1272,9 +1521,16 @@ async function toggleAttendanceStatus(girlId, girlName, date) {
 
   state.attendanceData[key] = rec;
 
-  if (firebaseReady && window._fb) {
-    try { await window._fb.setDoc(window._fb.doc(db, 'attendance', key), rec); }
-    catch (e) { console.error('Save attendance Firestore error:', e); }
+  // Online: save directly. Offline: queue for sync.
+  if (navigator.onLine && firebaseReady && window._fb) {
+    try {
+      await window._fb.setDoc(window._fb.doc(db, 'attendance', key), rec);
+    } catch (e) {
+      console.error('Save attendance Firestore error:', e);
+      await OfflineQueue.add({ type: 'saveAttendance', data: rec });
+    }
+  } else {
+    await OfflineQueue.add({ type: 'saveAttendance', data: rec });
   }
 
   renderAttendanceList();
@@ -1317,7 +1573,8 @@ async function markAllAbsentForDate(date) {
     state.attendanceData[rec.id] = rec;
   }
 
-  if (firebaseReady && window._fb && batchRecords.length > 0) {
+  // Online: batch save to Firestore. Offline: queue batch for sync.
+  if (navigator.onLine && firebaseReady && window._fb && batchRecords.length > 0) {
     try {
       const batch = window._fb.writeBatch(db);
       for (const rec of batchRecords) {
@@ -1326,7 +1583,10 @@ async function markAllAbsentForDate(date) {
       await batch.commit();
     } catch (e) {
       console.error('Batch save attendance Firestore error:', e);
+      await OfflineQueue.add({ type: 'saveBatchAttendance', data: { records: batchRecords } });
     }
+  } else if (batchRecords.length > 0) {
+    await OfflineQueue.add({ type: 'saveBatchAttendance', data: { records: batchRecords } });
   }
 
   if (batchRecords.length > 0) {
@@ -1370,7 +1630,8 @@ async function selectAllStatus(status) {
     state.attendanceData[key] = rec;
   }
 
-  if (firebaseReady && window._fb && batchRecords.length > 0) {
+  // Online: batch save to Firestore. Offline: queue batch for sync.
+  if (navigator.onLine && firebaseReady && window._fb && batchRecords.length > 0) {
     try {
       const batch = window._fb.writeBatch(db);
       for (const rec of batchRecords) {
@@ -1379,7 +1640,10 @@ async function selectAllStatus(status) {
       await batch.commit();
     } catch (e) {
       console.error('Batch save attendance Firestore error:', e);
+      await OfflineQueue.add({ type: 'saveBatchAttendance', data: { records: batchRecords } });
     }
+  } else if (batchRecords.length > 0) {
+    await OfflineQueue.add({ type: 'saveBatchAttendance', data: { records: batchRecords } });
   }
 
   await logHistory('تسجيل حضور', `${status === 'حاضر' ? 'تحديد الكل حاضر' : 'تحديد الكل غائب'} - ${state.selectedActivity} - ${date}`);
@@ -1467,9 +1731,16 @@ async function deleteAttendanceRecord(key) {
     onOk: async () => {
       try {
         delete state.attendanceData[key];
-        if (firebaseReady && window._fb) {
-          try { await window._fb.deleteDoc(window._fb.doc(db, 'attendance', key)); }
-          catch (e) { console.error('Delete attendance Firestore error:', e); }
+        // Online: delete directly. Offline: queue for sync.
+        if (navigator.onLine && firebaseReady && window._fb) {
+          try {
+            await window._fb.deleteDoc(window._fb.doc(db, 'attendance', key));
+          } catch (e) {
+            console.error('Delete attendance Firestore error:', e);
+            await OfflineQueue.add({ type: 'deleteAttendance', data: { key } });
+          }
+        } else {
+          await OfflineQueue.add({ type: 'deleteAttendance', data: { key } });
         }
         await logHistory('حذف سجل حضور', `${gName} - ${rec.date} - ${rec.activity} - ${rec.status}`);
         showToast('تم حذف سجل الحضور', 'success');
@@ -1537,9 +1808,16 @@ if (DOM.saveAttendanceEntry) {
 
     state.attendanceData[key] = rec;
 
-    if (firebaseReady && window._fb) {
-      try { await window._fb.setDoc(window._fb.doc(db, 'attendance', key), rec); }
-      catch (e) { console.error('Save attendance Firestore error:', e); }
+    // Online: save directly. Offline: queue for sync.
+    if (navigator.onLine && firebaseReady && window._fb) {
+      try {
+        await window._fb.setDoc(window._fb.doc(db, 'attendance', key), rec);
+      } catch (e) {
+        console.error('Save attendance Firestore error:', e);
+        await OfflineQueue.add({ type: 'saveAttendance', data: rec });
+      }
+    } else {
+      await OfflineQueue.add({ type: 'saveAttendance', data: rec });
     }
 
     const gName = state.girls.find(g => g.id === state.currentAttendanceGirlId)?.name || '';
@@ -1980,19 +2258,25 @@ function getHistoryIcon(action) {
   return '&#128295;';
 }
 
-async function logHistory(action, detail) {
+async function logHistory(action, detail, customTimestamp) {
+  const ts = customTimestamp || Date.now();
   const log = {
-    id: 'log_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
+    id: 'log_' + ts + '_' + Math.random().toString(36).slice(2, 7),
     action, detail,
     by: state.currentUser?.displayName || 'مستخدم',
     byEmail: state.currentUser?.email || '',
-    timestamp: Date.now()
+    timestamp: ts
   };
   // Save to IndexedDB first (always works, even offline)
   try { await IDB.add('history', log); } catch (e) { console.warn('IDB history save failed:', e); }
-  // Save to Firestore (works when online)
-  if (firebaseReady && window._fb) {
-    try { await window._fb.setDoc(window._fb.doc(db, 'history', log.id), log); } catch (e) { }
+  // Save to Firestore or queue for sync
+  if (navigator.onLine && firebaseReady && window._fb) {
+    try { await window._fb.setDoc(window._fb.doc(db, 'history', log.id), log); }
+    catch (e) {
+      await OfflineQueue.add({ type: 'saveHistory', data: log });
+    }
+  } else {
+    await OfflineQueue.add({ type: 'saveHistory', data: log });
   }
 }
 
@@ -2508,11 +2792,26 @@ async function bootstrap() {
     state.idb = false;
   }
 
+  // Initialize offline sync queue
+  try {
+    await OfflineQueue.init();
+  } catch (e) {
+    console.warn('OfflineQueue init failed:', e);
+  }
+
+  // Initialize timestamp toggle UI
+  initTimestampToggle();
+
+  // Set initial online status
+  updateOnlineStatus();
+
   // Initialize Firebase modules
   const modulesReady = await initModules();
 
   if (modulesReady) {
     await initAuth();
+    // Try syncing any pending operations from previous offline sessions
+    OfflineQueue.trySync();
   } else {
     console.error('Firebase failed to load');
     hideSplash();
