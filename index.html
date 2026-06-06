@@ -11,8 +11,6 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;700&family=Noto+Naskh+Arabic:wght@400;600&family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
-<base target="_blank">
-<base target="_blank">
 </head>
 <body>
   <div id="app">
@@ -29,37 +27,10 @@
     <!-- Login Screen -->
     <div id="loginScreen" class="screen hidden">
       <div class="login-bg"></div>
-
-      <!-- Hero Image -->
       <div class="login-hero">
-        <img
-          src="https://i.ibb.co/Hf86pKxc/d041aaef2c786ed113ab887ce89a3b0060f9df0b8895f4103b871fc88b5e9e4b.png"
-          alt="Factory"
-          class="login-hero-img"
-          fetchpriority="high"
-          width="640"
-          height="381"
-         
-        >
+        <img src="https://i.ibb.co/Hf86pKxc/d041aaef2c786ed113ab887ce89a3b0060f9df0b8895f4103b871fc88b5e9e4b.png" alt="Factory" class="login-hero-img" fetchpriority="high" width="640" height="381">
         <div class="login-gradient-bridge"></div>
       </div>
-
-      <!-- Gold Particles -->
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-<!-- White Content Card -->
       <div class="login-card" id="loginCard">
         <div class="login-cross-icon">&#127970;</div>
         <div class="login-church-name">شركة الصناعة المتقدمة</div>
@@ -73,13 +44,19 @@
           <span class="btn-text">تسجيل الدخول بـ Google</span>
         </button>
 
-        
-</div>
+        <button id="guestSignIn" class="btn-guest">
+          <span>&#128100;</span>
+          <span>الدخول كزائر (بدون إنترنت)</span>
+        </button>
+
+        <div class="login-hint">
+          <span>&#128161;</span> إذا واجهت مشكلة في تسجيل الدخول، استخدم "الدخول كزائر"
+        </div>
+      </div>
     </div>
 
     <!-- Main App -->
     <div id="mainApp" class="hidden">
-      <!-- Header -->
       <header class="app-header">
         <div class="header-right">
           <button class="menu-btn" id="menuBtn" aria-label="القائمة">&#9776;</button>
@@ -89,20 +66,19 @@
           </div>
         </div>
         <div class="header-left">
-          <div class="offline-badge-header hidden" id="offlineBadgeHeader" title="وضع عدم الاتصال - العمليات ستُحفظ محلياً وتُرفع عند عودة النت">
+          <div class="offline-badge-header hidden" id="offlineBadgeHeader">
             <span>&#9888;</span> Offline
           </div>
           <div class="avatar" id="userAvatar">خ</div>
         </div>
       </header>
 
-      <!-- Side Drawer -->
       <div class="drawer-overlay" id="drawerOverlay"></div>
       <nav class="drawer" id="drawer" aria-label="القائمة الرئيسية">
         <div class="drawer-header">
           <div class="drawer-avatar" id="drawerAvatar">خ</div>
           <div class="drawer-user-info">
-            <span id="drawerUserName">الخادم</span>
+            <span id="drawerUserName">المستخدم</span>
             <span id="drawerUserEmail" class="drawer-email">user@gmail.com</span>
           </div>
         </div>
@@ -117,7 +93,6 @@
           <li class="drawer-divider"></li>
           <li><a href="#" id="signOutBtn" class="menu-item sign-out"><span>&#128682;</span> تسجيل الخروج</a></li>
         </ul>
-        <!-- Dark Mode Toggle -->
         <div class="dark-mode-toggle" id="darkModeToggle">
           <span>&#127769;</span> الوضع الداكن
           <div class="dark-toggle-switch" id="darkToggleSwitch"></div>
@@ -125,11 +100,9 @@
         <div class="offline-badge" id="offlineBadge">
           <span>&#9888;</span> أنت في وضع عدم الاتصال. سيتم مزامنة البيانات عند عودة الإنترنت.
         </div>
-</nav>
+      </nav>
 
-      <!-- Page Content -->
       <main class="page-content" id="pageContent">
-
         <!-- HOME PAGE -->
         <div id="page-home" class="page active">
           <div class="search-bar-wrap">
@@ -146,8 +119,6 @@
             <div id="todayServiceBadge" class="service-badge"></div>
           </div>
 
-          
-
           <div class="stats-grid">
             <div class="stat-card blue">
               <div class="stat-num" id="statTotal">0</div>
@@ -161,10 +132,7 @@
               <div class="stat-num" id="statAbsentToday">0</div>
               <div class="stat-label">الغائبين اليوم</div>
             </div>
-            
           </div>
-
-          
 
           <div class="section-title">الأكثر حضورًا هذا الشهر</div>
           <div id="topAttendees" class="top-list"></div>
@@ -187,13 +155,9 @@
             <label for="attendanceDate">التاريخ:</label>
             <input type="date" id="attendanceDate" class="date-input">
           </div>
-          
-
-          <!-- Attendance Search Bar -->
           <div class="search-bar-wrap" style="margin-top:4px;">
             <input type="text" id="attendanceSearch" class="search-bar" placeholder="&#128269; ابحث في الحضور..." autocomplete="off">
           </div>
-
           <div class="attendance-summary" id="attendanceSummary">
             <span class="summ-item green-text">&#10003; <span id="presentCount">0</span> حاضر</span>
             <span class="summ-item red-text">&#10007; <span id="absentCount">0</span> غائب</span>
@@ -203,18 +167,16 @@
             <button class="quick-action-btn all-present" id="selectAllPresent">&#10003; تحديد الكل حاضر</button>
             <button class="quick-action-btn all-absent" id="selectAllAbsent">&#10007; تحديد الكل غائب</button>
           </div>
-          <div class="att-toggle-hint" id="attToggleHint">&#128161; اضغط للتبديل بين حاضر/غائب &middot; اضغط مطولاً للتفاصيل &middot; اضغط نجمة للتقييم</div>
+          <div class="att-toggle-hint" id="attToggleHint">&#128161; اضغط للتبديل بين حاضر/غائب &middot; اضغط مطولاً للتفاصيل</div>
           <div id="attendanceList" class="attendance-list"></div>
         </div>
 
         <!-- GIRLS PAGE -->
         <div id="page-girls" class="page">
-          <!-- Search bar for finding girls to edit/delete -->
           <div class="search-bar-wrap" style="margin-bottom:4px;">
             <input type="text" id="girlsSearch" class="search-bar" placeholder="&#128269; ابحث عن موظف للتعديل أو الحذف..." autocomplete="off">
           </div>
           <div class="girls-filter-row">
-            
             <button class="btn-add-girl" id="addGirlBtn">+ إضافة</button>
           </div>
           <div id="girlsList" class="girls-list"></div>
@@ -223,9 +185,9 @@
         <!-- CALENDAR PAGE -->
         <div id="page-calendar" class="page">
           <div class="calendar-nav">
-            <button class="cal-nav-btn" id="calPrev" aria-label="الشهر السابق">&#9664;</button>
+            <button class="cal-nav-btn" id="calPrev">&#9664;</button>
             <span id="calMonthYear" class="cal-month-title">---</span>
-            <button class="cal-nav-btn" id="calNext" aria-label="الشهر التالي">&#9654;</button>
+            <button class="cal-nav-btn" id="calNext">&#9654;</button>
           </div>
           <div class="calendar-grid" id="calendarGrid"></div>
           <div id="dayDetail" class="day-detail"></div>
@@ -233,7 +195,6 @@
 
         <!-- STATS PAGE -->
         <div id="page-stats" class="page">
-          <!-- Date picker for month + day specific stats -->
           <div class="stats-month-selector">
             <label for="statsMonth">التاريخ:</label>
             <input type="date" id="statsMonth" class="month-input">
@@ -244,11 +205,7 @@
             <button class="time-filter-tab" data-period="month">هذا الشهر</button>
             <button class="time-filter-tab" data-period="year">هذه السنة</button>
           </div>
-          
           <div class="big-stats-grid" id="bigStatsGrid"></div>
-
-          
-
           <div class="section-title">توزيع الغيابات</div>
           <div id="absenceChart" class="absence-chart"></div>
           <div class="section-title">ترتيب الحضور</div>
@@ -284,7 +241,6 @@
               <label for="exportMonth">التاريخ:</label>
               <input type="date" id="exportMonth" class="month-input">
             </div>
-            <!-- Export Mode Selector -->
             <div class="export-mode-wrap">
               <label class="export-mode-label">نطاق التصدير:</label>
               <div class="export-mode-options">
@@ -301,12 +257,12 @@
               </div>
             </div>
             <div class="export-hint">
-              <span>&#128161;</span> "يوم محدد" = تقرير يومي (✓ حاضر / ✗ غايب) &nbsp;|&nbsp; "الشهر كامل" = تقرير أرقام (إحصائيات)
+              <span>&#128161;</span> "يوم محدد" = تقرير يومي (&#10003; حاضر / &#10007; غايب) &nbsp;|&nbsp; "الشهر كامل" = تقرير أرقام (إحصائيات)
             </div>
             <div class="export-btns">
               <button class="export-btn csv" id="exportCSV">
                 <span>&#128196;</span>
-                <div><b>تصدير Excel</b><small>حاضر = &#10003; | غائب = X</small></div>
+                <div><b>تصدير Excel</b><small>حاضر = &#10003; | غائب = &#10007;</small></div>
               </button>
               <button class="export-btn json" id="exportJSON">
                 <span>&#128190;</span>
@@ -319,16 +275,14 @@
             </div>
           </div>
         </div>
-
       </main>
 
-      <!-- Bottom Nav -->
       <nav class="bottom-nav" aria-label="التنقل السفلي">
-        <button class="nav-btn active" data-page="home" aria-label="الرئيسية"><span>&#127968;</span><label>الرئيسية</label></button>
-        <button class="nav-btn" data-page="attendance" aria-label="الحضور"><span>&#128203;</span><label>الحضور</label></button>
-        <button class="nav-btn" data-page="girls" aria-label="الموظفين"><span>&#128101;</span><label>الموظفين</label></button>
-        <button class="nav-btn" data-page="calendar" aria-label="التقويم"><span>&#128197;</span><label>التقويم</label></button>
-        <button class="nav-btn" data-page="stats" aria-label="إحصائيات"><span>&#128202;</span><label>إحصائيات</label></button>
+        <button class="nav-btn active" data-page="home"><span>&#127968;</span><label>الرئيسية</label></button>
+        <button class="nav-btn" data-page="attendance"><span>&#128203;</span><label>الحضور</label></button>
+        <button class="nav-btn" data-page="girls"><span>&#128101;</span><label>الموظفين</label></button>
+        <button class="nav-btn" data-page="calendar"><span>&#128197;</span><label>التقويم</label></button>
+        <button class="nav-btn" data-page="stats"><span>&#128202;</span><label>إحصائيات</label></button>
       </nav>
     </div>
 
@@ -337,7 +291,7 @@
       <div class="modal">
         <div class="modal-header">
           <h3 id="girlModalTitle">إضافة موظف</h3>
-          <button class="modal-close" id="closeGirlModal" aria-label="إغلاق">&#10005;</button>
+          <button class="modal-close" id="closeGirlModal">&#10005;</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -353,11 +307,11 @@
             <div class="timestamp-header">
               <label class="timestamp-label">&#9200; وقت التسجيل</label>
               <div class="timestamp-toggle" id="timestampToggle">
-                <span class="ts-option" data-mode="auto">تلقائي</span>
-                <span class="ts-option active" data-mode="manual">يدوي</span>
+                <span class="ts-option active" data-mode="auto">تلقائي</span>
+                <span class="ts-option" data-mode="manual">يدوي</span>
               </div>
             </div>
-            <div class="timestamp-inputs" id="timestampInputs">
+            <div class="timestamp-inputs hidden" id="timestampInputs">
               <div class="ts-row">
                 <div class="ts-field">
                   <label for="girlDate">التاريخ</label>
@@ -369,7 +323,7 @@
                 </div>
               </div>
             </div>
-            <div class="timestamp-auto-msg" id="timestampAutoMsg" style="display:none;">
+            <div class="timestamp-auto-msg" id="timestampAutoMsg">
               <span>&#9989; سيتم تسجيل التاريخ والوقت الحالي تلقائياً</span>
             </div>
           </div>
@@ -404,7 +358,7 @@
       <div class="modal modal-large">
         <div class="modal-header">
           <h3 id="profileName">ملف الموظف</h3>
-          <button class="modal-close" id="closeProfileModal" aria-label="إغلاق">&#10005;</button>
+          <button class="modal-close" id="closeProfileModal">&#10005;</button>
         </div>
         <div class="modal-body" id="profileBody"></div>
         <div class="modal-footer">
@@ -419,7 +373,7 @@
       <div class="modal">
         <div class="modal-header">
           <h3 id="attendanceModalTitle">تسجيل الحضور</h3>
-          <button class="modal-close" id="closeAttendanceModal" aria-label="إغلاق">&#10005;</button>
+          <button class="modal-close" id="closeAttendanceModal">&#10005;</button>
         </div>
         <div class="modal-body">
           <p class="modal-girl-name" id="modalGirlName"></p>
@@ -427,7 +381,6 @@
             <button class="attend-btn present" data-status="حاضر" type="button">&#10003; حاضر</button>
             <button class="attend-btn absent" data-status="غائب" type="button">&#10007; غائب</button>
           </div>
-          
           <div class="form-group">
             <label for="attendanceNotes">ملاحظات:</label>
             <textarea id="attendanceNotes" class="form-input" rows="3" placeholder="ملاحظات..."></textarea>
@@ -445,7 +398,7 @@
       <div class="modal modal-large">
         <div class="modal-header">
           <h3 id="activityDetailTitle">تفاصيل النشاط</h3>
-          <button class="modal-close" id="closeActivityDetailModal" aria-label="إغلاق">&#10005;</button>
+          <button class="modal-close" id="closeActivityDetailModal">&#10005;</button>
         </div>
         <div class="modal-body">
           <div class="detail-summary-bar" id="activityDetailSummary">
