@@ -79,9 +79,10 @@ async function initModules() {
       console.warn('XLSX library failed to load:', xlsxErr);
     }
 
+    console.log('✅ Firebase initialized successfully');
     return true;
   } catch (e) {
-    console.error('Firebase failed to initialize:', e);
+    console.error('❌ Firebase failed to initialize:', e);
     firebaseReady = false;
     return false;
   }
@@ -152,6 +153,7 @@ const DOM = {
   presentTabCount: $('presentTabCount'),
   absentTabCount: $('absentTabCount'),
   menuBtn: $('menuBtn'), signOutBtn: $('signOutBtn'), googleSignIn: $('googleSignIn'), 
+  guestSignIn: $('guestSignIn'),
   darkModeToggle: $('darkModeToggle'), darkToggleSwitch: $('darkToggleSwitch'),
   shareProfileBtn: $('shareProfileBtn'), editProfileBtn: $('editProfileBtn'),
   statsGradeFilter: $('statsGradeFilter'),
@@ -655,33 +657,107 @@ async function initAuth() {
 }
 
 // Guest Sign In
+function initGuestMode() {
+  if (DOM.guestSignIn) {
+    DOM.guestSignIn.addEventListener('click', async () => {
+      console.log('Guest sign-in clicked');
+      // Create a mock user for guest mode
+      const guestUser = {
+        uid: 'guest_' + Date.now(),
+        displayName: 'زائر',
+        email: 'guest@local.com',
+        isGuest: true
+      };
+      
+      state.currentUser = guestUser;
+      hideSplash();
+      showApp(guestUser);
+      
+      if (!state.appInitialized) {
+        state.appInitialized = true;
+        // Load from localStorage/IndexedDB only (no Firebase sync)
+        await loadLocalData();
+        renderPage();
+      }
+      
+      showToast('تم الدخول في وضع الزائر - البيانات محلية فقط', 'success');
+    });
+  }
+}
 
+// Load data without Firebase (Guest mode)
+async function loadLocalData() {
+  try {
+    // Load girls from localStorage
+    const savedGirls = localStorage.getItem('guest_girls');
+    if (savedGirls) {
+      state.girls = JSON.parse(savedGirls);
+    }
+    
+    // Load attendance from localStorage
+    const savedAttendance = localStorage.getItem('guest_attendance');
+    if (savedAttendance) {
+      state.attendanceData = JSON.parse(savedAttendance);
+    }
+    
+    console.log('Local data loaded:', state.girls.length, 'girls');
+  } catch (e) {
+    console.error('Error loading local data:', e);
+  }
+}
 
+// Save data locally for guest mode
+function saveLocalData() {
+  try {
+    localStorage.setItem('guest_girls', JSON.stringify(state.girls));
+    localStorage.setItem('guest_attendance', JSON.stringify(state.attendanceData));
+  } catch (e) {
+    console.error('Error saving local data:', e);
+  }
+}
+
+// Google Sign In — FIXED: Added console logs and better checks
 if (DOM.googleSignIn) {
   DOM.googleSignIn.addEventListener('click', async () => {
-    if (!firebaseReady || !window._fb) {
-      showToast('الإنترنت غير متاح - استخدم وضع عدم الاتصال', 'warning');
+    console.log('🔵 Google Sign In clicked');
+    console.log('firebaseReady:', firebaseReady, 'window._fb:', !!window._fb, 'auth:', !!auth, 'provider:', !!provider);
+    
+    if (!firebaseReady || !window._fb || !auth || !provider) {
+      console.error('Firebase not ready. firebaseReady:', firebaseReady, 'auth:', !!auth, 'provider:', !!provider);
+      showToast('الإنترنت غير متاح أو Firebase لم يُحمّل بعد - جرب وضع الزائر', 'warning');
       return;
     }
+    
     DOM.googleSignIn.classList.add('is-loading');
     try {
       const { signInWithPopup } = window._fb;
+      console.log('Calling signInWithPopup...');
       await signInWithPopup(auth, provider);
+      console.log('✅ signInWithPopup succeeded');
     } catch (e) {
+      console.error('❌ signInWithPopup error:', e.code, e.message);
       DOM.googleSignIn.classList.remove('is-loading');
       if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e.code)) {
+        showToast('تم حظر النافذة المنبثقة - جاري التحويل...', 'warning');
         try {
           const { signInWithRedirect } = window._fb;
           await signInWithRedirect(auth, provider);
-        } catch (e2) { showToast('فشل تسجيل الدخول: ' + e2.message, 'error'); }
+        } catch (e2) { 
+          console.error('Redirect also failed:', e2);
+          showToast('فشل تسجيل الدخول: ' + e2.message, 'error'); 
+        }
+      } else if (e.code === 'auth/network-request-failed') {
+        showToast('فشل الاتصال بالشبكة - تحقق من الإنترنت', 'error');
+      } else if (e.code === 'auth/unauthorized-domain') {
+        showToast('هذا النطاق غير مصرح له - أضفه في Firebase Console', 'error');
       } else {
         showToast('فشل تسجيل الدخول: ' + e.message, 'error');
       }
     }
   });
+} else {
+  console.error('❌ googleSignIn button not found in DOM!');
 }
-
-
 
 if (DOM.signOutBtn) {
   DOM.signOutBtn.addEventListener('click', async () => {
@@ -1288,10 +1364,15 @@ if (DOM.saveGirlBtn) {
         state.girls.push(girlData);
       }
 
+      // Save locally for guest mode
+      if (state.currentUser?.isGuest) {
+        saveLocalData();
+      }
+
       await logHistory(state.editingGirlId ? 'تعديل موظف' : 'إضافة موظف', `${name} - موظف`, customTimestamp);
 
       // Online: save directly. Offline: queue for sync.
-      if (navigator.onLine && firebaseReady && window._fb) {
+      if (navigator.onLine && firebaseReady && window._fb && !state.currentUser?.isGuest) {
         try {
           await window._fb.setDoc(window._fb.doc(db, 'girls', id), girlData);
         } catch (e) {
@@ -1299,7 +1380,7 @@ if (DOM.saveGirlBtn) {
           // If failed, queue for later
           await OfflineQueue.add({ type: 'saveGirl', data: girlData });
         }
-      } else {
+      } else if (!state.currentUser?.isGuest) {
         await OfflineQueue.add({ type: 'saveGirl', data: girlData });
       }
 
@@ -1521,15 +1602,20 @@ async function toggleAttendanceStatus(girlId, girlName, date) {
 
   state.attendanceData[key] = rec;
 
+  // Save locally for guest mode
+  if (state.currentUser?.isGuest) {
+    saveLocalData();
+  }
+
   // Online: save directly. Offline: queue for sync.
-  if (navigator.onLine && firebaseReady && window._fb) {
+  if (navigator.onLine && firebaseReady && window._fb && !state.currentUser?.isGuest) {
     try {
       await window._fb.setDoc(window._fb.doc(db, 'attendance', key), rec);
     } catch (e) {
       console.error('Save attendance Firestore error:', e);
       await OfflineQueue.add({ type: 'saveAttendance', data: rec });
     }
-  } else {
+  } else if (!state.currentUser?.isGuest) {
     await OfflineQueue.add({ type: 'saveAttendance', data: rec });
   }
 
@@ -1573,8 +1659,13 @@ async function markAllAbsentForDate(date) {
     state.attendanceData[rec.id] = rec;
   }
 
+  // Save locally for guest mode
+  if (state.currentUser?.isGuest) {
+    saveLocalData();
+  }
+
   // Online: batch save to Firestore. Offline: queue batch for sync.
-  if (navigator.onLine && firebaseReady && window._fb && batchRecords.length > 0) {
+  if (navigator.onLine && firebaseReady && window._fb && batchRecords.length > 0 && !state.currentUser?.isGuest) {
     try {
       const batch = window._fb.writeBatch(db);
       for (const rec of batchRecords) {
@@ -1585,7 +1676,7 @@ async function markAllAbsentForDate(date) {
       console.error('Batch save attendance Firestore error:', e);
       await OfflineQueue.add({ type: 'saveBatchAttendance', data: { records: batchRecords } });
     }
-  } else if (batchRecords.length > 0) {
+  } else if (batchRecords.length > 0 && !state.currentUser?.isGuest) {
     await OfflineQueue.add({ type: 'saveBatchAttendance', data: { records: batchRecords } });
   }
 
@@ -1630,8 +1721,13 @@ async function selectAllStatus(status) {
     state.attendanceData[key] = rec;
   }
 
+  // Save locally for guest mode
+  if (state.currentUser?.isGuest) {
+    saveLocalData();
+  }
+
   // Online: batch save to Firestore. Offline: queue batch for sync.
-  if (navigator.onLine && firebaseReady && window._fb && batchRecords.length > 0) {
+  if (navigator.onLine && firebaseReady && window._fb && batchRecords.length > 0 && !state.currentUser?.isGuest) {
     try {
       const batch = window._fb.writeBatch(db);
       for (const rec of batchRecords) {
@@ -1642,7 +1738,7 @@ async function selectAllStatus(status) {
       console.error('Batch save attendance Firestore error:', e);
       await OfflineQueue.add({ type: 'saveBatchAttendance', data: { records: batchRecords } });
     }
-  } else if (batchRecords.length > 0) {
+  } else if (batchRecords.length > 0 && !state.currentUser?.isGuest) {
     await OfflineQueue.add({ type: 'saveBatchAttendance', data: { records: batchRecords } });
   }
 
@@ -1731,15 +1827,21 @@ async function deleteAttendanceRecord(key) {
     onOk: async () => {
       try {
         delete state.attendanceData[key];
+        
+        // Save locally for guest mode
+        if (state.currentUser?.isGuest) {
+          saveLocalData();
+        }
+        
         // Online: delete directly. Offline: queue for sync.
-        if (navigator.onLine && firebaseReady && window._fb) {
+        if (navigator.onLine && firebaseReady && window._fb && !state.currentUser?.isGuest) {
           try {
             await window._fb.deleteDoc(window._fb.doc(db, 'attendance', key));
           } catch (e) {
             console.error('Delete attendance Firestore error:', e);
             await OfflineQueue.add({ type: 'deleteAttendance', data: { key } });
           }
-        } else {
+        } else if (!state.currentUser?.isGuest) {
           await OfflineQueue.add({ type: 'deleteAttendance', data: { key } });
         }
         await logHistory('حذف سجل حضور', `${gName} - ${rec.date} - ${rec.activity} - ${rec.status}`);
@@ -1808,15 +1910,20 @@ if (DOM.saveAttendanceEntry) {
 
     state.attendanceData[key] = rec;
 
+    // Save locally for guest mode
+    if (state.currentUser?.isGuest) {
+      saveLocalData();
+    }
+
     // Online: save directly. Offline: queue for sync.
-    if (navigator.onLine && firebaseReady && window._fb) {
+    if (navigator.onLine && firebaseReady && window._fb && !state.currentUser?.isGuest) {
       try {
         await window._fb.setDoc(window._fb.doc(db, 'attendance', key), rec);
       } catch (e) {
         console.error('Save attendance Firestore error:', e);
         await OfflineQueue.add({ type: 'saveAttendance', data: rec });
       }
-    } else {
+    } else if (!state.currentUser?.isGuest) {
       await OfflineQueue.add({ type: 'saveAttendance', data: rec });
     }
 
@@ -2159,7 +2266,7 @@ async function renderHistory(append = false) {
     const seenIds = new Set();
 
     // 1. Try Firestore first (online) — get ALL history documents
-    if (firebaseReady && window._fb) {
+    if (firebaseReady && window._fb && !state.currentUser?.isGuest) {
       try {
         const snap = await window._fb.getDocs(
           window._fb.query(window._fb.collection(db, 'history'), window._fb.orderBy('timestamp', 'desc'))
@@ -2231,7 +2338,7 @@ if (DOM.clearHistoryBtn) {
         if (state.idb) await IDB.clear('history');
         state.historyAllLogs = [];
         // Clear Firestore
-        if (firebaseReady && window._fb) {
+        if (firebaseReady && window._fb && !state.currentUser?.isGuest) {
           try {
             const snap = await window._fb.getDocs(window._fb.collection(db, 'history'));
             if (snap.docs.length) {
@@ -2270,12 +2377,12 @@ async function logHistory(action, detail, customTimestamp) {
   // Save to IndexedDB first (always works, even offline)
   try { await IDB.add('history', log); } catch (e) { console.warn('IDB history save failed:', e); }
   // Save to Firestore or queue for sync
-  if (navigator.onLine && firebaseReady && window._fb) {
+  if (navigator.onLine && firebaseReady && window._fb && !state.currentUser?.isGuest) {
     try { await window._fb.setDoc(window._fb.doc(db, 'history', log.id), log); }
     catch (e) {
       await OfflineQueue.add({ type: 'saveHistory', data: log });
     }
-  } else {
+  } else if (!state.currentUser?.isGuest) {
     await OfflineQueue.add({ type: 'saveHistory', data: log });
   }
 }
@@ -2415,7 +2522,9 @@ if (DOM.exportCSV) {
     URL.revokeObjectURL(url);
     showToast(exportMode === 'month' ? 'تم تصدير ملف Excel للشهر' : 'تم تصدير ملف Excel لليوم', 'success');
   });
-}if (DOM.exportJSON) {
+}
+
+if (DOM.exportJSON) {
   DOM.exportJSON.addEventListener('click', () => {
     const exportDate = DOM.exportMonth.value || DateUtil.toStr();
     const exportStart = exportDate.substring(0, 7) + '-01';
@@ -2781,12 +2890,14 @@ setupDelegation();
 // BOOTSTRAP — Fixed with proper error handling
 // ============================================================
 async function bootstrap() {
+  console.log('🚀 Bootstrap starting...');
   initDarkMode();
 
   // Initialize IndexedDB first (always, even without Firebase)
   try {
     await IDB.init();
     state.idb = true;
+    console.log('✅ IndexedDB ready');
   } catch (e) {
     console.warn('IndexedDB init failed:', e);
     state.idb = false;
@@ -2795,6 +2906,7 @@ async function bootstrap() {
   // Initialize offline sync queue
   try {
     await OfflineQueue.init();
+    console.log('✅ OfflineQueue ready');
   } catch (e) {
     console.warn('OfflineQueue init failed:', e);
   }
@@ -2802,18 +2914,22 @@ async function bootstrap() {
   // Initialize timestamp toggle UI
   initTimestampToggle();
 
+  // Initialize Guest Mode (always available)
+  initGuestMode();
+
   // Set initial online status
   updateOnlineStatus();
 
   // Initialize Firebase modules
   const modulesReady = await initModules();
+  console.log('Firebase modules ready:', modulesReady);
 
   if (modulesReady) {
     await initAuth();
     // Try syncing any pending operations from previous offline sessions
     OfflineQueue.trySync();
   } else {
-    console.error('Firebase failed to load');
+    console.error('Firebase failed to load - showing login with guest option');
     hideSplash();
     showLogin();
   }
