@@ -2,6 +2,8 @@
 // نظام الحضور والغياب — Offline Ready & Guest Mode
 // ============================================================
 
+console.log('[APP] Script loaded');
+
 window.addEventListener('error', (e) => {
   console.error('Global error:', e.error || e.message);
   hideSplashForced();
@@ -17,15 +19,22 @@ let splashForceHidden = false;
 function hideSplashForced() {
   if (splashForceHidden) return;
   splashForceHidden = true;
+  console.log('[APP] hideSplashForced called');
   const splash = document.getElementById('splash');
   if (splash) {
     splash.classList.add('fade-out');
-    setTimeout(() => splash.remove(), 500);
+    setTimeout(() => {
+      if (splash) {
+        splash.style.display = 'none';
+        splash.remove();
+      }
+    }, 500);
   }
   setTimeout(() => {
     const loginScreen = document.getElementById('loginScreen');
     const mainApp = document.getElementById('mainApp');
     if (loginScreen && mainApp && mainApp.classList.contains('hidden') && loginScreen.classList.contains('hidden')) {
+      console.log('[APP] Fallback: showing login screen');
       loginScreen.classList.remove('hidden');
       showLogin();
     }
@@ -37,6 +46,7 @@ let firebaseReady = false;
 let XLSX = null;
 
 async function initModules() {
+  console.log('[APP] initModules started');
   try {
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
     const { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
@@ -67,9 +77,10 @@ async function initModules() {
       console.warn('XLSX library failed to load:', xlsxErr);
     }
 
+    console.log('[APP] initModules success');
     return true;
   } catch (e) {
-    console.error('Firebase failed to initialize:', e);
+    console.error('[APP] Firebase failed to initialize:', e);
     firebaseReady = false;
     return false;
   }
@@ -137,6 +148,8 @@ const DOM = {
   darkModeToggle: $('darkModeToggle'), darkToggleSwitch: $('darkToggleSwitch'),
   shareProfileBtn: $('shareProfileBtn'), editProfileBtn: $('editProfileBtn'),
 };
+
+console.log('[APP] DOM cached');
 
 const OfflineQueue = {
   queue: [],
@@ -381,7 +394,6 @@ function hasConsecutiveAbsences(girlId, monthStr) {
   return { hasConsecutive: false, count: absDates.length, dates: absDates };
 }
 
-// ========== MISSING FUNCTIONS FIXES ==========
 function getStatsBounds() {
   const selectedDate = DOM.statsMonth && DOM.statsMonth.value ? DOM.statsMonth.value : DateUtil.toStr();
   switch (state.statsTimeFilter) {
@@ -459,19 +471,17 @@ function getMostRegularGirlFiltered(monthStr, gradeFilter) {
       presentDatesByGirl[a.girlId].add(a.date);
     }
   });
-  let best = null, bestCount = 0, bestTotal = 0;
+  let best = null, bestCount = 0;
   Object.entries(presentDatesByGirl).forEach(([id, dates]) => {
     const count = dates.size;
     if (count > bestCount) {
       bestCount = count;
       best = state.girls.find(g => g.id === id);
-      bestTotal = count;
     }
   });
   const serviceDays = getServiceDaysInMonth(new Date().getFullYear(), new Date().getMonth()).length || 1;
   return best ? { name: best.name, count: bestCount, percent: (bestCount / serviceDays) * 100 } : null;
 }
-// ========== END MISSING FUNCTIONS FIXES ==========
 
 function normalizeArabic(str) {
   if (!str) return '';
@@ -603,9 +613,15 @@ function hideSplash() {
   if (splashDone) return;
   splashDone = true;
   splashForceHidden = true;
+  console.log('[APP] hideSplash called');
   if (DOM.splash) {
     DOM.splash.classList.add('fade-out');
-    setTimeout(() => { if (DOM.splash) DOM.splash.remove(); }, 500);
+    setTimeout(() => {
+      if (DOM.splash) {
+        DOM.splash.style.display = 'none';
+        DOM.splash.remove();
+      }
+    }, 500);
   }
 }
 
@@ -648,6 +664,7 @@ async function initAuth() {
 }
 
 function enterGuestMode() {
+  console.log('[APP] enterGuestMode called');
   hideSplash();
   state.isGuestMode = true;
   state.currentUser = { displayName: 'زائر', email: 'guest@local', uid: 'guest_' + Date.now() };
@@ -658,9 +675,11 @@ function enterGuestMode() {
     renderPage();
   }
 }
+window.enterGuestMode = enterGuestMode;
 
 if (DOM.googleSignIn) {
   DOM.googleSignIn.addEventListener('click', async () => {
+    console.log('[APP] Google Sign-In clicked');
     if (!firebaseReady || !window._fb) {
       showToast('Firebase غير متاح - جرب "الدخول كزائر"', 'warning');
       return;
@@ -685,8 +704,11 @@ if (DOM.googleSignIn) {
 
 if (DOM.guestSignIn) {
   DOM.guestSignIn.addEventListener('click', () => {
+    console.log('[APP] Guest Sign-In clicked (listener)');
     enterGuestMode();
   });
+} else {
+  console.warn('[APP] guestSignIn element not found in DOM cache');
 }
 
 if (DOM.signOutBtn) {
@@ -710,6 +732,7 @@ if (DOM.signOutBtn) {
 }
 
 function showApp(user) {
+  console.log('[APP] showApp called');
   if (DOM.loginScreen) DOM.loginScreen.classList.add('hidden');
   if (DOM.mainApp) DOM.mainApp.classList.remove('hidden');
   if (DOM.googleSignIn) DOM.googleSignIn.classList.remove('is-loading');
@@ -726,20 +749,18 @@ function showApp(user) {
 }
 
 function showLogin() {
+  console.log('[APP] showLogin called');
   if (DOM.loginScreen) DOM.loginScreen.classList.remove('hidden');
   if (DOM.mainApp) DOM.mainApp.classList.add('hidden');
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      const card = document.getElementById('loginCard');
-      if (card) {
-        card.classList.add('animate-in');
-        card.querySelectorAll('.login-cross-icon, .login-church-name, .login-system-title, .login-divider, .login-welcome, .btn-google, .btn-guest, .login-hint').forEach(el => {
-          el.classList.add('animate-in');
-        });
-      }
+  const card = document.getElementById('loginCard');
+  if (card) {
+    card.classList.add('animate-in');
+    card.querySelectorAll('.login-cross-icon, .login-church-name, .login-system-title, .login-divider, .login-welcome, .btn-google, .btn-guest, .login-hint').forEach(el => {
+      el.classList.add('animate-in');
     });
-  });
+  }
 }
+window.showLogin = showLogin;
 
 async function loadData() {
   try {
@@ -2657,11 +2678,13 @@ if (girlsSearchInput) {
 setupDelegation();
 
 async function bootstrap() {
+  console.log('[APP] bootstrap started');
   initDarkMode();
 
   try {
     await IDB.init();
     state.idb = true;
+    console.log('[APP] IDB initialized');
   } catch (e) {
     console.warn('IndexedDB init failed:', e);
     state.idb = false;
@@ -2669,6 +2692,7 @@ async function bootstrap() {
 
   try {
     await OfflineQueue.init();
+    console.log('[APP] OfflineQueue initialized');
   } catch (e) {
     console.warn('OfflineQueue init failed:', e);
   }
@@ -2677,6 +2701,7 @@ async function bootstrap() {
   updateOnlineStatus();
 
   const modulesReady = await initModules();
+  console.log('[APP] modulesReady:', modulesReady);
 
   if (modulesReady) {
     await initAuth();
@@ -2685,7 +2710,7 @@ async function bootstrap() {
     console.error('Firebase failed to load - enabling guest mode fallback');
     hideSplash();
     showLogin();
-    showToast('فشل تحميل Firebase. استخدم "الدخول كزائر" للعمل بدون إنترنت.', 'warning');
+    showToast('فشل تحميل Firebase. اضغط "الدخول كزائر" للعمل بدون إنترنت.', 'warning');
   }
 }
 
