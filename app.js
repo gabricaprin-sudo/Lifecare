@@ -14,8 +14,8 @@ window.addEventListener('unhandledrejection', (e) => {
   hideSplashForced();
 });
 
-// Force hide splash after 6 seconds max — never get stuck
-setTimeout(hideSplashForced, 6000);
+// Force hide splash after 3 seconds max — never get stuck
+setTimeout(hideSplashForced, 3000);
 
 let splashForceHidden = false;
 function hideSplashForced() {
@@ -24,17 +24,20 @@ function hideSplashForced() {
   const splash = document.getElementById('splash');
   if (splash) {
     splash.classList.add('fade-out');
-    setTimeout(() => splash.remove(), 500);
+    setTimeout(() => {
+      splash.style.display = 'none';
+      splash.remove();
+    }, 500);
   }
   // Show login screen as fallback if app isn't initialized
   setTimeout(() => {
     const loginScreen = document.getElementById('loginScreen');
     const mainApp = document.getElementById('mainApp');
-    if (loginScreen && mainApp && mainApp.classList.contains('hidden') && loginScreen.classList.contains('hidden')) {
+    if (loginScreen && mainApp && mainApp.classList.contains('hidden')) {
       loginScreen.classList.remove('hidden');
-      showLogin();
+      if (typeof showLogin === 'function') showLogin();
     }
-  }, 600);
+  }, 550);
 }
 
 // ============================================================
@@ -605,7 +608,12 @@ function hideSplash() {
   splashForceHidden = true;
   if (DOM.splash) {
     DOM.splash.classList.add('fade-out');
-    setTimeout(() => { if (DOM.splash) DOM.splash.remove(); }, 500);
+    setTimeout(() => {
+      if (DOM.splash) {
+        DOM.splash.style.display = 'none';
+        DOM.splash.remove();
+      }
+    }, 500);
   }
 }
 
@@ -2580,7 +2588,4 @@ if (DOM.exportPrint) {
         </body></html>`;
     }
 
-    const w = window.open('', '_blank');
-    if (!w) { showToast('تم حجب النافذة من المتصفح', 'error'); return; }
-    w.document.write(html);
-    
+    const w = window.open('', 
