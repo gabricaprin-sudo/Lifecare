@@ -89,7 +89,10 @@
           </div>
         </div>
         <div class="header-left">
-<div class="avatar" id="userAvatar">خ</div>
+          <div class="offline-badge-header hidden" id="offlineBadgeHeader" title="وضع عدم الاتصال - العمليات ستُحفظ محلياً وتُرفع عند عودة النت">
+            <span>&#9888;</span> Offline
+          </div>
+          <div class="avatar" id="userAvatar">خ</div>
         </div>
       </header>
 
@@ -118,6 +121,9 @@
         <div class="dark-mode-toggle" id="darkModeToggle">
           <span>&#127769;</span> الوضع الداكن
           <div class="dark-toggle-switch" id="darkToggleSwitch"></div>
+        </div>
+        <div class="offline-badge" id="offlineBadge">
+          <span>&#9888;</span> أنت في وضع عدم الاتصال. سيتم مزامنة البيانات عند عودة الإنترنت.
         </div>
 </nav>
 
@@ -171,8 +177,11 @@
         <div id="page-attendance" class="page">
           <div class="day-selector">
             <button class="day-btn" data-day="السبت">السبت</button>
+            <button class="day-btn" data-day="الأحد">الأحد</button>
             <button class="day-btn" data-day="الاثنين">الإثنين</button>
-            <button class="day-btn" data-day="الاربعاء">الأربعاء</button>
+            <button class="day-btn" data-day="الثلاثاء">الثلاثاء</button>
+            <button class="day-btn" data-day="الأربعاء">الأربعاء</button>
+            <button class="day-btn" data-day="الخميس">الخميس</button>
           </div>
           <div class="date-input-wrap">
             <label for="attendanceDate">التاريخ:</label>
@@ -230,10 +239,10 @@
             <input type="date" id="statsMonth" class="month-input">
           </div>
           <div class="time-filter-tabs" id="timeFilterTabs">
-            <button class="time-filter-tab" data-period="today">اليوم</button>
-            <button class="time-filter-tab active" data-period="month">هذا الشهر</button>
-            <button class="time-filter-tab" data-period="year">هذه السنة</button>
             <button class="time-filter-tab" data-period="all">الكل</button>
+            <button class="time-filter-tab active" data-period="today">اليوم</button>
+            <button class="time-filter-tab" data-period="month">هذا الشهر</button>
+            <button class="time-filter-tab" data-period="year">هذه السنة</button>
           </div>
           
           <div class="big-stats-grid" id="bigStatsGrid"></div>
@@ -340,6 +349,30 @@
             <input type="tel" id="girlPhone" class="form-input" placeholder="رقم التليفون" dir="ltr">
           </div>
           <input type="hidden" id="girlGrade" value="موظف">
+          <div class="timestamp-section">
+            <div class="timestamp-header">
+              <label class="timestamp-label">&#9200; وقت التسجيل</label>
+              <div class="timestamp-toggle" id="timestampToggle">
+                <span class="ts-option" data-mode="auto">تلقائي</span>
+                <span class="ts-option active" data-mode="manual">يدوي</span>
+              </div>
+            </div>
+            <div class="timestamp-inputs" id="timestampInputs">
+              <div class="ts-row">
+                <div class="ts-field">
+                  <label for="girlDate">التاريخ</label>
+                  <input type="date" id="girlDate" class="form-input" dir="ltr">
+                </div>
+                <div class="ts-field">
+                  <label for="girlTime">الوقت</label>
+                  <input type="time" id="girlTime" class="form-input" dir="ltr">
+                </div>
+              </div>
+            </div>
+            <div class="timestamp-auto-msg" id="timestampAutoMsg" style="display:none;">
+              <span>&#9989; سيتم تسجيل التاريخ والوقت الحالي تلقائياً</span>
+            </div>
+          </div>
           <div class="form-group">
             <label for="girlNotes">ملاحظات</label>
             <textarea id="girlNotes" class="form-input" rows="3" placeholder="أي ملاحظات..."></textarea>
