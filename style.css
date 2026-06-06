@@ -137,7 +137,7 @@ body {
   display: flex; align-items: center; justify-content: center;
   transition: opacity 0.5s ease;
 }
-.splash.fade-out { opacity: 0; pointer-events: none; }
+.splash.fade-out { opacity: 0; pointer-events: none; visibility: hidden; }
 .splash-content { text-align: center; color: white; }
 .splash-cross {
   font-size: 64px; display: block; margin-bottom: 16px;
