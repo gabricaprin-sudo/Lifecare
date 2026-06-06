@@ -24,20 +24,17 @@ function hideSplashForced() {
   const splash = document.getElementById('splash');
   if (splash) {
     splash.classList.add('fade-out');
-    setTimeout(() => {
-      splash.style.display = 'none';
-      splash.remove();
-    }, 500);
+    setTimeout(() => splash.remove(), 500);
   }
   // Show login screen as fallback if app isn't initialized
   setTimeout(() => {
     const loginScreen = document.getElementById('loginScreen');
     const mainApp = document.getElementById('mainApp');
-    if (loginScreen && mainApp && mainApp.classList.contains('hidden')) {
+    if (loginScreen && mainApp && mainApp.classList.contains('hidden') && loginScreen.classList.contains('hidden')) {
       loginScreen.classList.remove('hidden');
-      if (typeof showLogin === 'function') showLogin();
+      showLogin();
     }
-  }, 550);
+  }, 600);
 }
 
 // ============================================================
@@ -608,12 +605,7 @@ function hideSplash() {
   splashForceHidden = true;
   if (DOM.splash) {
     DOM.splash.classList.add('fade-out');
-    setTimeout(() => {
-      if (DOM.splash) {
-        DOM.splash.style.display = 'none';
-        DOM.splash.remove();
-      }
-    }, 500);
+    setTimeout(() => { if (DOM.splash) DOM.splash.remove(); }, 500);
   }
 }
 
@@ -667,7 +659,6 @@ async function initAuth() {
 
 if (DOM.googleSignIn) {
   DOM.googleSignIn.addEventListener('click', async () => {
-    // انتظر لحد ما Firebase تكون جاهزة (حد 5 ثواني)
     if (!firebaseReady || !window._fb) {
       DOM.googleSignIn.classList.add('is-loading');
       let waited = 0;
@@ -678,7 +669,7 @@ if (DOM.googleSignIn) {
     }
     if (!firebaseReady || !window._fb) {
       DOM.googleSignIn.classList.remove('is-loading');
-      showToast('الإنترنت غير متاح أو Firebase لم تُحمَّل، حاول مرة أخرى', 'warning');
+      showToast('تعذر الاتصال، تأكد من الإنترنت وحاول مجدداً', 'warning');
       return;
     }
     DOM.googleSignIn.classList.add('is-loading');
@@ -2588,4 +2579,11 @@ if (DOM.exportPrint) {
         </body></html>`;
     }
 
-    const w = window.open('', 
+    const w = window.open('', '_blank');
+    if (!w) { showToast('تم حجب النافذة من المتصفح', 'error'); return; }
+    w.document.write(html);
+    w.document.close();
+    w.print();
+  });
+}
+function downloadFile(
