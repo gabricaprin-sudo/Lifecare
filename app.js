@@ -48,27 +48,28 @@ let XLSX = null;
 async function initModules() {
   try {
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-    const { getAuth, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+    const { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
     const { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
 
     const firebaseConfig = {
-      apiKey: "AIzaSyB2cycBTKMjVg8S_fBYN8C-hwUk5FUF81Q",
-      authDomain: "kenesa-e5efd.firebaseapp.com",
-      projectId: "kenesa-e5efd",
-      storageBucket: "kenesa-e5efd.firebasestorage.app",
-      messagingSenderId: "227273753184",
-      appId: "1:227273753184:web:ecdf258142ad55ed5cf905",
-      measurementId: "G-6HS8KNW1GZ"
+      apiKey: "AIzaSyDjEZsPpbHq7r50pe400NUo7cvZANYeSac",
+      authDomain: "deimrpilek.firebaseapp.com",
+      projectId: "deimrpilek",
+      storageBucket: "deimrpilek.firebasestorage.app",
+      messagingSenderId: "716821036614",
+      appId: "1:716821036614:web:779ff5cb9209c10379d447",
+      measurementId: "G-XCHPH116GP"
     };
 
     firebaseApp = initializeApp(firebaseConfig);
     auth = getAuth(firebaseApp);
     db = getFirestore(firebaseApp);
     provider = new GoogleAuthProvider();
+    const appleProvider = new OAuthProvider('apple.com');
     firebaseReady = true;
 
     // Attach Firebase functions to global scope for the app
-    window._fb = { collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut };
+    window._fb = { collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut, appleProvider };
 
     // Try to load XLSX
     try {
@@ -150,7 +151,7 @@ const DOM = {
   activityDetailList: $('activityDetailList'),
   presentTabCount: $('presentTabCount'),
   absentTabCount: $('absentTabCount'),
-  menuBtn: $('menuBtn'), signOutBtn: $('signOutBtn'), googleSignIn: $('googleSignIn'),
+  menuBtn: $('menuBtn'), signOutBtn: $('signOutBtn'), googleSignIn: $('googleSignIn'), appleSignIn: $('appleSignIn'),
   darkModeToggle: $('darkModeToggle'), darkToggleSwitch: $('darkToggleSwitch'),
   shareProfileBtn: $('shareProfileBtn'), editProfileBtn: $('editProfileBtn'),
   statsGradeFilter: $('statsGradeFilter'),
@@ -528,6 +529,30 @@ if (DOM.googleSignIn) {
         try {
           const { signInWithRedirect } = window._fb;
           await signInWithRedirect(auth, provider);
+        } catch (e2) { showToast('فشل تسجيل الدخول: ' + e2.message, 'error'); }
+      } else {
+        showToast('فشل تسجيل الدخول: ' + e.message, 'error');
+      }
+    }
+  });
+}
+
+if (DOM.appleSignIn) {
+  DOM.appleSignIn.addEventListener('click', async () => {
+    if (!firebaseReady || !window._fb) {
+      showToast('الإنترنت غير متاح - استخدم وضع عدم الاتصال', 'warning');
+      return;
+    }
+    DOM.appleSignIn.classList.add('is-loading');
+    try {
+      const { signInWithPopup } = window._fb;
+      await signInWithPopup(auth, window._fb.appleProvider);
+    } catch (e) {
+      DOM.appleSignIn.classList.remove('is-loading');
+      if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e.code)) {
+        try {
+          const { signInWithRedirect } = window._fb;
+          await signInWithRedirect(auth, window._fb.appleProvider);
         } catch (e2) { showToast('فشل تسجيل الدخول: ' + e2.message, 'error'); }
       } else {
         showToast('فشل تسجيل الدخول: ' + e.message, 'error');
