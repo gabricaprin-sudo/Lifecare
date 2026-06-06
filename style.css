@@ -224,10 +224,12 @@ body {
   flex-direction: column;
   align-items: center;
   overflow-y: auto;
-  opacity: 0;
-  transform: translateY(40px);
+  opacity: 1;
+  transform: translateY(0);
 }
 .login-card.animate-in {
+  opacity: 0;
+  transform: translateY(40px);
   animation: cardSlideUp 800ms cubic-bezier(0.34, 1.56, 0.64, 1) 300ms forwards;
 }
 @keyframes cardSlideUp {
@@ -252,10 +254,12 @@ body {
   line-height: 1;
   margin-bottom: 16px;
   filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.3));
-  opacity: 0;
-  transform: scale(0.8);
+  opacity: 1;
+  transform: scale(1);
 }
 .login-cross-icon.animate-in {
+  opacity: 0;
+  transform: scale(0.8);
   animation: crossBounce 400ms cubic-bezier(0.34, 1.56, 0.64, 1) 500ms forwards;
 }
 @keyframes crossBounce {
@@ -269,10 +273,12 @@ body {
   color: #0F2B5B;
   margin-bottom: 4px;
   letter-spacing: 0;
-  opacity: 0;
-  transform: translateY(10px);
+  opacity: 1;
+  transform: translateY(0);
 }
 .login-church-name.animate-in {
+  opacity: 0;
+  transform: translateY(10px);
   animation: fadeSlideUp 400ms ease-out 580ms forwards;
 }
 /* System Title */
@@ -283,10 +289,12 @@ body {
   color: #3D4A5C;
   margin-bottom: 20px;
   letter-spacing: 0;
-  opacity: 0;
-  transform: translateY(10px);
+  opacity: 1;
+  transform: translateY(0);
 }
 .login-system-title.animate-in {
+  opacity: 0;
+  transform: translateY(10px);
   animation: fadeSlideUp 400ms ease-out 660ms forwards;
 }
 /* Gold Divider */
@@ -329,10 +337,12 @@ body {
   color: #3D4A5C;
   margin-bottom: 24px;
   letter-spacing: 0;
-  opacity: 0;
-  transform: translateY(10px);
+  opacity: 1;
+  transform: translateY(0);
 }
 .login-welcome.animate-in {
+  opacity: 0;
+  transform: translateY(10px);
   animation: fadeSlideUp 400ms ease-out 820ms forwards;
 }
 @keyframes fadeSlideUp {
@@ -358,10 +368,12 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   min-height: 52px;
   touch-action: manipulation;
-  opacity: 0;
-  transform: translateY(15px);
+  opacity: 1;
+  transform: translateY(0);
 }
 .btn-google.animate-in {
+  opacity: 0;
+  transform: translateY(15px);
   animation: fadeSlideUp 400ms cubic-bezier(0.25, 0.1, 0.25, 1) 1060ms forwards;
 }
 .btn-google:hover {
