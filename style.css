@@ -88,7 +88,6 @@
 [data-theme="dark"] .today-card { background: linear-gradient(135deg, #1e2d4d 0%, #2a3d6b 100%); }
 [data-theme="dark"] .cal-day.empty { background: transparent; }
 [data-theme="dark"] .service-dot { background: var(--accent); }
-[data-theme="dark"] 
 [data-theme="dark"] .filter-select { background: #131c30; color: var(--text); border-color: #2a3650; }
 [data-theme="dark"] .edit-btn { background: #1e293b; }
 [data-theme="dark"] .grade-badge { background: rgba(201,214,240,0.15); color: var(--primary); }
@@ -97,7 +96,6 @@
 [data-theme="dark"] .cal-wday { color: #8892a8; }
 [data-theme="dark"] .cal-day.service-day { background: rgba(201,214,240,0.08); }
 [data-theme="dark"] .activity-detail-tabs { background: #0f1525; }
-[data-theme="dark"] 
 [data-theme="dark"] .splash { background: linear-gradient(160deg, #0f1525 0%, #1a2744 50%, #0f1525 100%); }
 [data-theme="dark"] .login-bg {
   background: #0a1a38;
@@ -408,8 +406,57 @@ body {
   to { transform: rotate(360deg); }
 }
 
+/* Guest Sign-In Button */
+.btn-guest {
+  width: 90%;
+  margin-top: 12px;
+  padding: 14px 24px;
+  background: #f0f2f8;
+  border: 1.5px solid #C5CBD3;
+  border-radius: 16px;
+  font-family: 'Noto Kufi Arabic', 'Tajawal', sans-serif;
+  font-size: 15px;
+  font-weight: 600;
+  color: #3D4A5C;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  min-height: 52px;
+  touch-action: manipulation;
+  opacity: 0;
+  transform: translateY(15px);
+}
+.btn-guest.animate-in {
+  animation: fadeSlideUp 400ms cubic-bezier(0.25, 0.1, 0.25, 1) 1140ms forwards;
+}
+.btn-guest:hover {
+  border-color: #A0AAB8;
+  background: #e8eaf0;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+.btn-guest:active {
+  transform: scale(0.97);
+  border-color: #D4AF37;
+  background: #e0e2e8;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+  transition-duration: 0.15s;
+}
 
-
+/* Login Hint */
+.login-hint {
+  margin-top: 16px;
+  font-size: 13px;
+  color: #8892a8;
+  opacity: 0;
+  transform: translateY(10px);
+}
+.login-hint.animate-in {
+  animation: fadeSlideUp 400ms ease-out 1220ms forwards;
+}
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
