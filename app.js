@@ -87,10 +87,21 @@ async function initModules() {
 }
 
 // ============================================================
-// DOM ONBELLEK
+// DOM ONBELLEK + LIVE LOOKUP FALLBACK
 // ============================================================
 const $ = (id) => document.getElementById(id);
 const $$ = (sel, root = document) => root.querySelectorAll(sel);
+
+// Live DOM lookup - always gets current element, never null from stale cache
+function _$(id) {
+  const el = document.getElementById(id);
+  if (!el && DOM[id]) {
+    // Try cache as fallback, but warn
+    console.warn('Live DOM miss for #' + id + ', using cache');
+    return DOM[id];
+  }
+  return el;
+}
 
 const DOM = {
   splash: $('splash'), loginScreen: $('loginScreen'), mainApp: $('mainApp'),
@@ -646,11 +657,33 @@ async function initAuth() {
         renderPage();
       }
     });
+
+    // Also check current user immediately (in case inline script already signed in)
+    var currentUser = auth.currentUser;
+    if (currentUser && !state.appInitialized) {
+      console.log('User already signed in, initializing app...');
+      state.currentUser = currentUser;
+      showApp(currentUser);
+      state.appInitialized = true;
+      await loadData();
+      renderPage();
+    }
   } catch (e) {
     console.error('Kimlik dogrulama hatasi:', e);
     hideSplash();
     showLogin();
   }
+}
+
+// Fallback: eger DOM.googleSignIn null ise (script head'de calisti), 
+// tekrar dene sayfa tam yuklendiginde
+if (!DOM.googleSignIn) {
+  window.addEventListener('DOMContentLoaded', () => {
+    var btn = document.getElementById('googleSignIn');
+    if (btn && !btn._hasClickHandler) {
+      console.log('DOMContentLoaded: googleSignIn bulundu, delegation zaten aktif.');
+    }
+  });
 }
 
 // Fallback: eger DOM.googleSignIn null ise (script head'de calisti), 
@@ -2707,9 +2740,156 @@ $$('.modal-overlay').forEach(overlay => overlay.addEventListener('click', e => {
 }));
 
 // ============================================================
-// OLAY TEMSILCILIGI
+// OLAY TEMSILCILIGI - Comprehensive (works even if DOM cache is null)
 // ============================================================
 function setupDelegation() {
+  // Document-level delegation for ALL buttons that may have null DOM cache
+  document.addEventListener('click', function(e) {
+    // Quick actions: Tumu Var / Tumu Yok
+    var allPresent = e.target.closest('#selectAllPresent');
+    if (allPresent) { e.preventDefault(); selectAllStatus('Var'); return; }
+    var allAbsent = e.target.closest('#selectAllAbsent');
+    if (allAbsent) { e.preventDefault(); selectAllStatus('Yok'); return; }
+
+    // Add girl button
+    var addGirl = e.target.closest('#addGirlBtn');
+    if (addGirl) { e.preventDefault(); addGirlHandler(); return; }
+
+    // Save girl button
+    var saveGirl = e.target.closest('#saveGirlBtn');
+    if (saveGirl) { e.preventDefault(); saveGirlHandler(); return; }
+
+    // Cancel girl modal
+    var cancelGirl = e.target.closest('#cancelGirlModal');
+    if (cancelGirl) { e.preventDefault(); closeModal('girlModal'); return; }
+
+    // Close girl modal
+    var closeGirl = e.target.closest('#closeGirlModal');
+    if (closeGirl) { e.preventDefault(); closeModal('girlModal'); return; }
+
+    // Delete girl button
+    var deleteGirl = e.target.closest('#deleteGirlBtn');
+    if (deleteGirl) { e.preventDefault(); deleteGirlHandler(); return; }
+
+    // Save attendance entry
+    var saveAtt = e.target.closest('#saveAttendanceEntry');
+    if (saveAtt) { e.preventDefault(); saveAttendanceHandler(); return; }
+
+    // Cancel attendance modal
+    var cancelAtt = e.target.closest('#cancelAttendanceModal');
+    if (cancelAtt) { e.preventDefault(); closeModal('attendanceModal'); return; }
+
+    // Close attendance modal
+    var closeAtt = e.target.closest('#closeAttendanceModal');
+    if (closeAtt) { e.preventDefault(); closeModal('attendanceModal'); return; }
+
+    // Close profile modal
+    var closeProfile = e.target.closest('#closeProfileModal');
+    if (closeProfile) { e.preventDefault(); closeModal('girlProfileModal'); return; }
+
+    // Edit profile button
+    var editProfile = e.target.closest('#editProfileBtn');
+    if (editProfile) { e.preventDefault(); editProfileHandler(); return; }
+
+    // Share profile button
+    var shareProfile = e.target.closest('#shareProfileBtn');
+    if (shareProfile) { e.preventDefault(); shareProfileHandler(); return; }
+
+    // Close activity detail modal
+    var closeActivity = e.target.closest('#closeActivityDetailModal');
+    if (closeActivity) { e.preventDefault(); closeModal('activityDetailModal'); return; }
+
+    // Confirm cancel
+    var confirmCancel = e.target.closest('#confirmCancel');
+    if (confirmCancel) { e.preventDefault(); closeConfirm(); return; }
+
+    // Confirm OK
+    var confirmOk = e.target.closest('#confirmOk');
+    if (confirmOk) { e.preventDefault(); confirmOkHandler(); return; }
+
+    // Load more history
+    var loadMore = e.target.closest('#loadMoreHistoryBtn');
+    if (loadMore) { e.preventDefault(); renderHistory(true); return; }
+
+    // Clear history
+    var clearHistory = e.target.closest('#clearHistoryBtn');
+    if (clearHistory) { e.preventDefault(); clearHistoryHandler(); return; }
+
+    // Export buttons
+    var exportCSV = e.target.closest('#exportCSV');
+    if (exportCSV) { e.preventDefault(); exportCSVHandler(); return; }
+    var exportJSON = e.target.closest('#exportJSON');
+    if (exportJSON) { e.preventDefault(); exportJSONHandler(); return; }
+    var exportPrint = e.target.closest('#exportPrint');
+    if (exportPrint) { e.preventDefault(); exportPrintHandler(); return; }
+
+    // Calendar nav
+    var calPrev = e.target.closest('#calPrev');
+    if (calPrev) { e.preventDefault(); calPrevHandler(); return; }
+    var calNext = e.target.closest('#calNext');
+    if (calNext) { e.preventDefault(); calNextHandler(); return; }
+
+    // Day buttons
+    var dayBtn = e.target.closest('.day-btn');
+    if (dayBtn && dayBtn.dataset.day) {
+      e.preventDefault();
+      setActiveDay(dayBtn.dataset.day);
+      state.attendancePageInitialized = false;
+      renderAttendancePage();
+      return;
+    }
+
+    // Time filter tabs
+    var timeTab = e.target.closest('.time-filter-tab');
+    if (timeTab && timeTab.dataset.period) {
+      e.preventDefault();
+      state.statsTimeFilter = timeTab.dataset.period;
+      renderStats();
+      return;
+    }
+
+    // Activity detail tabs
+    var actTab = e.target.closest('.activity-detail-tab');
+    if (actTab && actTab.dataset.tab) {
+      e.preventDefault();
+      state.activityDetailTab = actTab.dataset.tab;
+      renderActivityDetailTab();
+      return;
+    }
+
+    // Attend buttons (Var/Yok)
+    var attendBtn = e.target.closest('.attend-btn');
+    if (attendBtn && attendBtn.dataset.status) {
+      e.preventDefault();
+      $$('.attend-btn').forEach(function(x) { x.classList.remove('selected'); });
+      attendBtn.classList.add('selected');
+      var ratingSection = document.getElementById('ratingSection');
+      if (ratingSection) ratingSection.classList.toggle('hidden', attendBtn.dataset.status !== 'Var');
+      return;
+    }
+
+    // Star rating
+    var star = e.target.closest('#starsInput .star');
+    if (star && star.dataset.rating) {
+      e.preventDefault();
+      var rating = parseInt(star.dataset.rating);
+      state.currentAttendanceRating = rating;
+      $$('#starsInput .star').forEach(function(s) {
+        s.classList.toggle('selected', parseInt(s.dataset.rating) <= rating);
+      });
+      return;
+    }
+
+    // Dark mode toggle
+    var darkToggle = e.target.closest('#darkModeToggle');
+    if (darkToggle) { e.preventDefault(); toggleDarkMode(); return; }
+
+    // Sign out
+    var signOut = e.target.closest('#signOutBtn');
+    if (signOut) { e.preventDefault(); signOutHandler(); return; }
+  });
+
+  // Original delegation (kept for backward compatibility)
   if (DOM.needsFollowup) {
     DOM.needsFollowup.addEventListener('click', e => {
       const item = e.target.closest('.followup-item');
@@ -2816,12 +2996,151 @@ if (girlsSearchInput) {
 setupDelegation();
 
 // ============================================================
+// WRAPPER HANDLERS (for document-level event delegation)
+// ============================================================
+function addGirlHandler() {
+  state.editingGirlId = null;
+  var title = document.getElementById('girlModalTitle');
+  if (title) title.textContent = 'Calisan Ekle';
+  var name = document.getElementById('girlName');
+  if (name) name.value = '';
+  var phone = document.getElementById('girlPhone');
+  if (phone) phone.value = '';
+  var notes = document.getElementById('girlNotes');
+  if (notes) notes.value = '';
+  var delBtn = document.getElementById('deleteGirlBtn');
+  if (delBtn) delBtn.classList.add('hidden');
+  resetTimestampInputs();
+  openModal('girlModal');
+}
+
+function saveGirlHandler() {
+  // Trigger the existing save logic by simulating the event
+  var btn = document.getElementById('saveGirlBtn');
+  if (btn) {
+    btn.dispatchEvent(new Event('click', { bubbles: true }));
+  }
+}
+
+function deleteGirlHandler() {
+  var btn = document.getElementById('deleteGirlBtn');
+  if (btn) {
+    btn.dispatchEvent(new Event('click', { bubbles: true }));
+  }
+}
+
+function saveAttendanceHandler() {
+  var btn = document.getElementById('saveAttendanceEntry');
+  if (btn) {
+    btn.dispatchEvent(new Event('click', { bubbles: true }));
+  }
+}
+
+function editProfileHandler() {
+  closeModal('girlProfileModal');
+  if (state.currentProfileGirlId) editGirl(state.currentProfileGirlId);
+}
+
+function shareProfileHandler() {
+  var btn = document.getElementById('shareProfileBtn');
+  if (btn) {
+    btn.dispatchEvent(new Event('click', { bubbles: true }));
+  }
+}
+
+function confirmOkHandler() {
+  var btn = document.getElementById('confirmOk');
+  if (btn) {
+    btn.dispatchEvent(new Event('click', { bubbles: true }));
+  }
+}
+
+function closeConfirm() {
+  var overlay = document.getElementById('confirmOverlay');
+  if (overlay) overlay.classList.remove('show');
+  confirmResolve = null;
+}
+
+function clearHistoryHandler() {
+  var btn = document.getElementById('clearHistoryBtn');
+  if (btn) {
+    btn.dispatchEvent(new Event('click', { bubbles: true }));
+  }
+}
+
+function exportCSVHandler() {
+  var btn = document.getElementById('exportCSV');
+  if (btn) {
+    btn.dispatchEvent(new Event('click', { bubbles: true }));
+  }
+}
+
+function exportJSONHandler() {
+  var btn = document.getElementById('exportJSON');
+  if (btn) {
+    btn.dispatchEvent(new Event('click', { bubbles: true }));
+  }
+}
+
+function exportPrintHandler() {
+  var btn = document.getElementById('exportPrint');
+  if (btn) {
+    btn.dispatchEvent(new Event('click', { bubbles: true }));
+  }
+}
+
+function calPrevHandler() {
+  hideDayDetail();
+  state.calendarDate.setMonth(state.calendarDate.getMonth() - 1);
+  renderCalendar();
+}
+
+function calNextHandler() {
+  hideDayDetail();
+  state.calendarDate.setMonth(state.calendarDate.getMonth() + 1);
+  renderCalendar();
+}
+
+function toggleDarkMode() {
+  var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (isDark) {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('darkMode', 'false');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('darkMode', 'true');
+  }
+}
+
+function signOutHandler() {
+  if (!firebaseReady || !window._fb) {
+    state.currentUser = null;
+    state.appInitialized = false;
+    showLogin();
+    return;
+  }
+  try {
+    var signOut = window._fb.signOut;
+    signOut(auth).catch(function(e) {
+      console.error('Cikis hatasi:', e);
+    });
+    state.currentUser = null;
+    state.appInitialized = false;
+    showLogin();
+  } catch(e) {
+    console.error('Cikis hatasi:', e);
+    state.currentUser = null;
+    state.appInitialized = false;
+    showLogin();
+  }
+}
+
+// ============================================================
 // BASLATMA
 // ============================================================
 async function bootstrap() {
   initDarkMode();
 
-  // IndexedDB'yi ilk olarak baslat (Firebase olmadan bile)
   try {
     await IDB.init();
     state.idb = true;
@@ -2830,20 +3149,15 @@ async function bootstrap() {
     state.idb = false;
   }
 
-  // Cevrimdisi senkronizasyon kuyrugunu baslat
   try {
     await OfflineQueue.init();
   } catch (e) {
     console.warn('OfflineQueue baslatma hatasi:', e);
   }
 
-  // Zaman dilimi arayuzunu baslat
   initTimestampToggle();
-
-  // Cevrimici durumunu ayarla
   updateOnlineStatus();
 
-  // Firebase modullerini baslat
   const modulesReady = await initModules();
 
   if (modulesReady) {
@@ -2855,7 +3169,6 @@ async function bootstrap() {
     showLogin();
   }
 
-  // Global hook for inline script to trigger app init after manual sign-in
   window._triggerAppInit = async function(user) {
     console.log('_triggerAppInit called with user:', user?.email);
     state.currentUser = user;
