@@ -89,9 +89,34 @@
           var auth = firebase.auth();
           var provider = new firebase.auth.GoogleAuthProvider();
           auth.signInWithPopup(provider)
-            .then(function() {
+            .then(function(result) {
               alert('Login SUCCESS');
               show('Login success');
+
+              // Transition to main app
+              var loginScreen = document.getElementById('loginScreen');
+              var mainApp = document.getElementById('mainApp');
+              if (loginScreen) loginScreen.classList.add('hidden');
+              if (mainApp) mainApp.classList.remove('hidden');
+
+              // Update user avatar if available
+              var user = result.user;
+              if (user) {
+                var avatar = document.getElementById('userAvatar');
+                var drawerAvatar = document.getElementById('drawerAvatar');
+                var drawerName = document.getElementById('drawerUserName');
+                var drawerEmail = document.getElementById('drawerUserEmail');
+                var initial = user.displayName ? user.displayName[0] : 'K';
+                if (avatar) avatar.textContent = initial;
+                if (drawerAvatar) drawerAvatar.textContent = initial;
+                if (drawerName) drawerName.textContent = user.displayName || 'Kullanici';
+                if (drawerEmail) drawerEmail.textContent = user.email || '';
+              }
+
+              // Trigger app.js init if it loaded
+              if (window._triggerAppInit) {
+                window._triggerAppInit(user);
+              }
             })
             .catch(function(err) {
               alert('ERROR: ' + (err.code || err.message));
