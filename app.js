@@ -47,7 +47,7 @@ let XLSX = null;
 async function initModules() {
   try {
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-    const { getAuth, GoogleAuthProvider, onAuthStateChanged, getRedirectResult, signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+    const { getAuth, GoogleAuthProvider, onAuthStateChanged, getRedirectResult, signInWithPopup, signInWithRedirect, signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
     const { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
 
     const firebaseConfig = {
@@ -67,7 +67,7 @@ async function initModules() {
     firebaseReady = true;
 
     // Attach Firebase functions to global scope for the app
-    window._fb = { collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where, signOut, onAuthStateChanged, getRedirectResult };
+    window._fb = { collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where, signOut, onAuthStateChanged, getRedirectResult, signInWithPopup, signInWithRedirect };
 
     // Try to load XLSX
     try {
@@ -666,22 +666,30 @@ if (DOM.googleSignIn) {
     }
     DOM.googleSignIn.classList.add('is-loading');
     try {
-      const { signInWithPopup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+      const { signInWithPopup } = window._fb;
       await signInWithPopup(auth, provider);
     } catch (e) {
       DOM.googleSignIn.classList.remove('is-loading');
-      console.error('Sign-in error:', e.code, e.message);
-      // Map known error codes to user-friendly messages
-      const errorMessages = {
-        'auth/popup-blocked': 'تم حجب النافذة المنبثقة. الرجاء السماح بالنوافذ المنبثقة.',
-        'auth/popup-closed-by-user': 'تم اغلاق نافذة تسجيل الدخول.',
-        'auth/cancelled-popup-request': 'تم الغاء طلب تسجيل الدخول.',
-        'auth/network-request-failed': 'فشل الاتصال بالشبكة. تحقق من اتصال الانترنت.',
-        'auth/invalid-api-key': 'مفتاح API غير صالح.',
-        'auth/operation-not-supported-in-this-environment': 'العملية غير مدعومة في هذا البي.'
-      };
-      const userMsg = errorMessages[e.code] || ('فشل تسجيل الدخول: ' + (e.message || e.code));
-      showToast(userMsg, 'error');
+      if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e.code)) {
+        try {
+          const { signInWithRedirect } = window._fb;
+          await signInWithRedirect(auth, provider);
+        } catch (e2) {
+          showToast('فشل تسجيل الدخول: ' + e2.message, 'error');
+        }
+      } else {
+        console.error('Sign-in error:', e.code, e.message);
+        const errorMessages = {
+          'auth/popup-blocked': 'تم حجب النافذة المنبثقة. الرجاء السماح بالنوافذ المنبثقة.',
+          'auth/popup-closed-by-user': 'تم اغلاق نافذة تسجيل الدخول.',
+          'auth/cancelled-popup-request': 'تم الغاء طلب تسجيل الدخول.',
+          'auth/network-request-failed': 'فشل الاتصال بالشبكة. تحقق من اتصال الانترنت.',
+          'auth/invalid-api-key': 'مفتاح API غير صالح.',
+          'auth/operation-not-supported-in-this-environment': 'العملية غير مدعومة في هذا البي.'
+        };
+        const userMsg = errorMessages[e.code] || ('فشل تسجيل الدخول: ' + (e.message || e.code));
+        showToast(userMsg, 'error');
+      }
     }
   });
 }
@@ -1453,11 +1461,6 @@ function renderAttendancePage() {
 function setActiveDay(day) {
   state.selectedDay = day;
   $$('.day-btn').forEach(b => b.classList.toggle('active', b.dataset.day === day));
-}
-
-function setActiveActivity(act) {
-  state.selectedActivity = act;
-  $$('.act-tab').forEach(b => b.classList.toggle('active', b.dataset.activity === act));
 }
 
 $$('.day-btn').forEach(b => b.addEventListener('click', () => {
