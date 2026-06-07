@@ -14,7 +14,6 @@ window.addEventListener('unhandledrejection', (e) => {
   hideSplashForced();
 });
 
-// Splash'i en fazla 6 saniye sonra gizle - hicbir zaman takilmasin
 let splashForceHidden = false;
 function hideSplashForced() {
   if (splashForceHidden) return;
@@ -24,7 +23,6 @@ function hideSplashForced() {
     splash.classList.add('fade-out');
     setTimeout(() => splash.remove(), 500);
   }
-  // Uygulama baslatilmadiysa giris ekranini goster
   setTimeout(() => {
     const loginScreen = document.getElementById('loginScreen');
     const mainApp = document.getElementById('mainApp');
@@ -43,7 +41,6 @@ let firebaseApp, auth, db, provider;
 let firebaseReady = false;
 let XLSX = null;
 
-// Hata yonetimi ile modul importlari
 async function initModules() {
   try {
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
@@ -66,10 +63,8 @@ async function initModules() {
     provider = new GoogleAuthProvider();
     firebaseReady = true;
 
-    // Firebase fonksiyonlarini global kapsama ekle
     window._fb = { collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where, signOut, onAuthStateChanged };
 
-    // XLSX kutuphanesini yuklemeyi dene
     try {
       const xlsxMod = await import('https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs');
       XLSX = xlsxMod;
@@ -77,6 +72,7 @@ async function initModules() {
       console.warn('XLSX kutuphanesi yuklenemedi:', xlsxErr);
     }
 
+    console.log('Firebase basarili sekilde baslatildi');
     return true;
   } catch (e) {
     console.error('Firebase baslatilamadi:', e);
@@ -484,7 +480,7 @@ function csvEscape(v) {
 }
 
 // ============================================================
-// INDEXEDDB - cevrimdisi gecmis depolama
+// INDEXEDDB
 // ============================================================
 const IDB = {
   db: null,
@@ -581,7 +577,7 @@ if (DOM.darkModeToggle) {
 }
 
 // ============================================================
-// TOAST (Bildirim)
+// TOAST
 // ============================================================
 let toastTimeout;
 function showToast(msg, type = 'info') {
@@ -607,13 +603,36 @@ function hideSplash() {
 }
 
 // ============================================================
+// DEMO GIRIS (iframe/test ortami icin)
+// ============================================================
+function demoLogin() {
+  console.log('Demo girisi yapiliyor...');
+  const demoUser = {
+    uid: 'demo_' + Date.now(),
+    displayName: 'Demo Kullanici',
+    email: 'demo@yoklama.local',
+    photoURL: null,
+    isDemo: true
+  };
+  state.currentUser = demoUser;
+  hideSplash();
+  showApp(demoUser);
+  if (!state.appInitialized) {
+    state.appInitialized = true;
+    renderPage();
+  }
+  showToast('Demo modunda giris yaptiniz. Veriler yerel kaydedilecek.', 'warning');
+}
+
+// ============================================================
 // KIMLIK DOGRULAMA
 // ============================================================
 let authListenersAttached = false;
 
 async function initAuth() {
-  if (!firebaseReady || !window._fb) {
-    console.error('Firebase kullanilamiyor');
+  console.log('initAuth basladi...', { firebaseReady, hasFb: !!window._fb, hasAuth: !!auth });
+  if (!firebaseReady || !window._fb || !auth) {
+    console.error('Firebase kullanilamiyor - auth eksik');
     hideSplash();
     showLogin();
     return;
@@ -622,10 +641,15 @@ async function initAuth() {
   try {
     const { onAuthStateChanged } = window._fb;
 
-    if (authListenersAttached) return;
+    if (authListenersAttached) {
+      console.log('Auth listener zaten ekli, atlaniyor');
+      return;
+    }
     authListenersAttached = true;
 
+    console.log('onAuthStateChanged dinleyici ekleniyor...');
     onAuthStateChanged(auth, async (user) => {
+      console.log('onAuthStateChanged tetiklendi:', user ? user.email : 'null');
       hideSplash();
       if (!user) {
         state.currentUser = null;
@@ -643,6 +667,7 @@ async function initAuth() {
         renderPage();
       }
     });
+    console.log('onAuthStateChanged basarili sekilde ayarlandi');
   } catch (e) {
     console.error('Kimlik dogrulama hatasi:', e);
     hideSplash();
@@ -651,13 +676,14 @@ async function initAuth() {
 }
 
 // ============================================================
-// GOOGLE SIGN IN - Duzeltilmis ve Guclendirilmis
+// GOOGLE SIGN IN - Tamamen Yeniden Yazilmis
 // ============================================================
 if (DOM.googleSignIn) {
   DOM.googleSignIn.addEventListener('click', async () => {
-    // 1. Temel kontroller
+    console.log('Google Sign-In butonuna tiklandi');
+    
     if (!firebaseReady || !window._fb || !auth || !provider) {
-      console.error('Firebase hazir degil:', { firebaseReady, auth: !!auth, provider: !!provider });
+      console.error('Firebase hazir degil:', { firebaseReady, auth: !!auth, provider: !!provider, _fb: !!window._fb });
       showToast('Sistem hazir degil. Lutfen sayfayi yenileyin.', 'error');
       return;
     }
@@ -665,23 +691,26 @@ if (DOM.googleSignIn) {
     DOM.googleSignIn.classList.add('is-loading');
     
     try {
-      // Once popup dene
+      console.log('signInWithPopup deneniyor...');
       const { signInWithPopup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
-      await signInWithPopup(auth, provider);
-      // Basarili - loading kalkacak (onAuthStateChanged handle eder)
+      const result = await signInWithPopup(auth, provider);
+      console.log('Popup basarili:', result.user?.email);
+      // is-loading kalkacak (onAuthStateChanged -> showApp)
     } catch (e) {
-      console.error('Giris hatasi:', e.code, e.message);
+      console.error('Popup hatasi:', e.code, e.message);
       
-      // Popup engellenirse veya iframe'deyse redirect dene
+      // Popup engellendiyse veya iframe'deyse redirect dene
       if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') {
+        console.log('Popup basarisiz, signInWithRedirect deneniyor...');
         try {
           showToast('Popup acilamadi. Yonlendirme ile giris yapiliyor...', 'warning');
           const { signInWithRedirect } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
           await signInWithRedirect(auth, provider);
-          return; // Sayfa yonlendirilecek, loading kalabilir
+          console.log('Redirect baslatildi');
+          return;
         } catch (redirectErr) {
-          console.error('Redirect hatasi:', redirectErr);
-          showToast('Giris yontemi calismiyor. Lutfen tarayici ayarlarini kontrol edin.', 'error');
+          console.error('Redirect de basarisiz:', redirectErr);
+          showToast('Google girisi bu ortamda desteklenmiyor. Demo girisi kullanin.', 'error');
         }
       } else {
         const errorMessages = {
@@ -689,7 +718,8 @@ if (DOM.googleSignIn) {
           'auth/cancelled-popup-request': 'Giris istegi iptal edildi.',
           'auth/network-request-failed': 'Ag baglantisi basarisiz. Internet baglantinizi kontrol edin.',
           'auth/invalid-api-key': 'API anahtari gecersiz.',
-          'auth/unauthorized-domain': 'Bu domain icin giris yetkisi yok. Firebase Console\'dan yetkilendirin.'
+          'auth/unauthorized-domain': 'Bu domain icin giris yetkisi yok. Firebase Console\'dan yetkilendirin.',
+          'auth/internal-error': 'Firebase dahili hata. Lutfen daha sonra tekrar deneyin.'
         };
         const userMsg = errorMessages[e.code] || ('Giris basarisiz: ' + (e.message || e.code));
         showToast(userMsg, 'error');
@@ -702,20 +732,34 @@ if (DOM.googleSignIn) {
 
 // Redirect sonucunu kontrol et (sayfa geri dondugunde)
 async function checkRedirectResult() {
-  if (!firebaseReady || !auth) return;
+  if (!firebaseReady || !auth) {
+    console.log('Redirect kontrolu atlandi - Firebase hazir degil');
+    return;
+  }
   try {
+    console.log('getRedirectResult kontrol ediliyor...');
     const { getRedirectResult } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
     const result = await getRedirectResult(auth);
     if (result && result.user) {
       console.log('Redirect ile giris basarili:', result.user.email);
+    } else {
+      console.log('Redirect sonucu yok');
     }
   } catch (e) {
-    console.error('Redirect sonucu hatasi:', e);
+    console.error('Redirect sonucu hatasi:', e.code, e.message);
   }
 }
 
 if (DOM.signOutBtn) {
   DOM.signOutBtn.addEventListener('click', async () => {
+    if (state.currentUser?.isDemo) {
+      // Demo kullanici cikisi
+      state.currentUser = null;
+      state.appInitialized = false;
+      showLogin();
+      showToast('Demo oturumundan cikildi', 'info');
+      return;
+    }
     if (!firebaseReady || !window._fb) {
       state.currentUser = null;
       state.appInitialized = false;
@@ -735,6 +779,7 @@ if (DOM.signOutBtn) {
 }
 
 function showApp(user) {
+  console.log('showApp cagrildi:', user?.displayName || user?.email);
   if (DOM.loginScreen) DOM.loginScreen.classList.add('hidden');
   if (DOM.mainApp) DOM.mainApp.classList.remove('hidden');
   if (DOM.googleSignIn) DOM.googleSignIn.classList.remove('is-loading');
@@ -751,11 +796,30 @@ function showApp(user) {
 }
 
 function showLogin() {
+  console.log('showLogin cagrildi');
   if (DOM.loginScreen) DOM.loginScreen.classList.remove('hidden');
   if (DOM.mainApp) DOM.mainApp.classList.add('hidden');
+  
+  // Demo giris butonu ekle (eger yoksa)
+  const card = document.getElementById('loginCard');
+  if (card && !document.getElementById('demoSignIn')) {
+    const demoBtn = document.createElement('button');
+    demoBtn.id = 'demoSignIn';
+    demoBtn.className = 'btn-google';
+    demoBtn.style.marginTop = '12px';
+    demoBtn.style.background = '#f8f9fa';
+    demoBtn.style.borderColor = '#d0d4dc';
+    demoBtn.innerHTML = `<span style="font-size:20px">&#128100;</span><span style="font-size:14px">Demo ile Giris Yap (Test)</span>`;
+    demoBtn.addEventListener('click', (e) => {
+      e.preventDefault();
+      demoLogin();
+    });
+    card.appendChild(demoBtn);
+    console.log('Demo giris butonu eklendi');
+  }
+
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      const card = document.getElementById('loginCard');
       if (card) {
         card.classList.add('animate-in');
         card.querySelectorAll('.login-brand, .login-brand-icon, .login-brand-name, .login-motto, .login-divider, .login-divider span, .login-welcome, .btn-google').forEach(el => {
@@ -811,7 +875,6 @@ async function loadData() {
       if (changed) scheduleRender();
     });
 
-    // Gecmis koleksiyonunu dinle ve IndexedDB ile senkronize et
     _onSnapshot(_query(_collection(db, 'history'), _orderBy('timestamp', 'desc')), async snap => {
       let changed = false;
       for (const change of snap.docChanges()) {
@@ -1255,7 +1318,7 @@ function resetTimestampInputs() {
 }
 
 // ============================================================
-// CALISAN KAYDET - cevrimdisi destekli ve ozel zaman damgasi
+// CALISAN KAYDET
 // ============================================================
 if (DOM.saveGirlBtn) {
   DOM.saveGirlBtn.addEventListener('click', async () => {
@@ -1748,7 +1811,7 @@ async function deleteAttendanceRecord(key) {
 }
 
 // ============================================================
-// YOKLAMA KAYIT MODAL (degerlendirme ile)
+// YOKLAMA KAYIT MODAL
 // ============================================================
 function openAttendanceEntry(girlId, girlName, date) {
   state.currentAttendanceGirlId = girlId;
@@ -2751,6 +2814,7 @@ setupDelegation();
 // BASLATMA
 // ============================================================
 async function bootstrap() {
+  console.log('Bootstrap basladi...');
   initDarkMode();
 
   try {
@@ -2772,10 +2836,10 @@ async function bootstrap() {
   updateOnlineStatus();
 
   const modulesReady = await initModules();
+  console.log('initModules sonucu:', modulesReady);
 
   if (modulesReady) {
     await initAuth();
-    // Redirect sonucunu kontrol et (sayfa yonlendirme sonrasi geri donus)
     await checkRedirectResult();
     OfflineQueue.trySync();
   } else {
