@@ -15,107 +15,99 @@
 <base target="_blank">
 </head>
 <body>
-  <!-- DEBUG OVERLAY -->
-  <div id="debugOverlay" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#ff0000;color:#fff;padding:8px 12px;font-size:13px;font-family:monospace;white-space:nowrap;overflow:hidden;text-align:center;opacity:0.9;">
-    Debug: waiting for interaction...
+  <!-- DEBUG BAR -->
+  <div id="debugBar" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#ff0000;color:#fff;padding:8px;font-size:12px;font-family:monospace;text-align:center;">
+    Waiting...
   </div>
+
+  <!-- Firebase Compat (global) -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-<script>
-  // Simple, synchronous, bulletproof handler
-  (function(){
-    var d = document.getElementById('debugOverlay');
-    function log(msg) {
-      if(d) d.textContent = 'DEBUG: ' + msg;
-      console.log('[DEBUG]', msg);
-    }
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
 
-    document.addEventListener('click', function(e) {
-      var t = e.target;
-      log('CLICK ' + t.tagName + (t.id?'#'+t.id:'') + (t.className?'.'+t.className.split(' ')[0]:''));
-    }, true);
-
-    document.addEventListener('touchstart', function(e) {
-      var t = e.target;
-      log('TOUCH ' + t.tagName + (t.id?'#'+t.id:'') + (t.className?'.'+t.className.split(' ')[0]:''));
-    }, {passive:true});
-
-    log('inline script OK');
-    window.debugLog = log;
-
-    // Firebase config (compat version uses global firebase object)
-    var firebaseConfig = {
-      apiKey: "AIzaSyDjEZsPpbHq7r50pe400NUo7cvZANYeSac",
-      authDomain: "deimrpilek.firebaseapp.com",
-      projectId: "deimrpilek",
-      storageBucket: "deimrpilek.firebasestorage.app",
-      messagingSenderId: "716821036614",
-      appId: "1:716821036614:web:779ff5cb9209c10379d447",
-      measurementId: "G-XCHPH116GP"
-    };
-
-    // Initialize Firebase (compat version creates global firebase object)
-    var app = firebase.initializeApp(firebaseConfig);
-    var auth = firebase.auth();
-    var provider = new firebase.auth.GoogleAuthProvider();
-
-    log('Firebase initialized');
-    alert('Firebase hazir!');
-
-    // Handler
-    window.handleGoogleSignInInline = function(e) {
-      alert('Giris baslatiliyor...');
-      e.preventDefault();
-      e.stopPropagation();
-
-      log('Sign-In clicked');
-
-      try {
-        auth.signInWithPopup(provider)
-          .then(function(result) {
-            alert('Giris basarili!');
-            log('Sign-In successful');
-          })
-          .catch(function(err) {
-            log('HATA: ' + (err.code || err.message));
-            console.error('Sign-In error:', err);
-
-            var errorMessages = {
-              'auth/popup-blocked': 'Acilir pencere engellendi!
-
-Lutfen tarayici ayarlarindan acilir pencerelere izin verin.',
-              'auth/popup-closed-by-user': 'Giris penceresi kapatildi.
-
-Tekrar deneyin.',
-              'auth/cancelled-popup-request': 'Istek iptal edildi.
-
-Tekrar deneyin.',
-              'auth/network-request-failed': 'Internet baglantisi yok!
-
-Lutfen baglantinizi kontrol edin.',
-              'auth/invalid-api-key': 'API anahtari gecersiz!
-
-Yonetici ile iletisime gecin.',
-              'auth/operation-not-supported-in-this-environment': 'Bu cihazda Google girisi desteklenmiyor!
-
-Baska bir tarayici deneyin.',
-              'auth/unauthorized-domain': 'Bu domain yetkili degil!
-
-Firebase Console > Authentication > Settings > Authorized domains ekleyin.'
-            };
-
-            var msg = errorMessages[err.code] || ('Giris basarisiz!
-
-Hata: ' + (err.message || err.code || 'Bilinmeyen hata'));
-            alert(msg);
-          });
-      } catch(err) {
-        alert('HATA: ' + err.message);
-        log('Exception: ' + err.message);
+  <!-- Main Logic -->
+  <script>
+    (function(){
+      var bar = document.getElementById('debugBar');
+      function show(msg) {
+        if(bar) bar.textContent = msg;
+        console.log('[APP]', msg);
       }
-    };
-  })();
-</script>
+
+      // IMMEDIATE alert to prove script is running
+      alert('SCRIPT RUNNING');
+      show('Script loaded');
+
+      // Firebase config
+      var config = {
+        apiKey: "AIzaSyDjEZsPpbHq7r50pe400NUo7cvZANYeSac",
+        authDomain: "deimrpilek.firebaseapp.com",
+        projectId: "deimrpilek",
+        storageBucket: "deimrpilek.firebasestorage.app",
+        messagingSenderId: "716821036614",
+        appId: "1:716821036614:web:779ff5cb9209c10379d447"
+      };
+
+      // Wait for Firebase to be ready
+      function initFirebase() {
+        try {
+          if (typeof firebase === 'undefined') {
+            show('Firebase not loaded yet');
+            alert('Firebase not loaded - check internet');
+            return false;
+          }
+          firebase.initializeApp(config);
+          show('Firebase OK');
+          alert('Firebase OK');
+          return true;
+        } catch(e) {
+          show('Firebase error: ' + e.message);
+          alert('Firebase error: ' + e.message);
+          return false;
+        }
+      }
+
+      // Try immediately, and also on window.load
+      var fbReady = initFirebase();
+      if (!fbReady) {
+        window.addEventListener('load', function() {
+          fbReady = initFirebase();
+        });
+      }
+
+      // Global handler for the button
+      window.handleGoogleSignInInline = function(e) {
+        alert('BUTTON CLICKED');
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (!fbReady) {
+          alert('Firebase not ready - wait a moment and retry');
+          return;
+        }
+
+        try {
+          var auth = firebase.auth();
+          var provider = new firebase.auth.GoogleAuthProvider();
+          auth.signInWithPopup(provider)
+            .then(function() {
+              alert('Login SUCCESS');
+              show('Login success');
+            })
+            .catch(function(err) {
+              alert('ERROR: ' + (err.code || err.message));
+              show('Error: ' + (err.code || err.message));
+            });
+        } catch(err) {
+          alert('EXCEPTION: ' + err.message);
+          show('Exception: ' + err.message);
+        }
+      };
+
+      show('Handler ready');
+      alert('Handler ready');
+    })();
+  </script>
+
   <div id="app">
     <!-- Splash Screen -->
     <div id="splash" class="splash">
