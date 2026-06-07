@@ -1,3 +1,4 @@
+console.log("app.js loaded successfully");
 // ============================================================
 // Yoklama Sistemi - Personel Devam Takip (Cevrimdisi Destekli)
 // ============================================================
@@ -664,21 +665,33 @@ if (!DOM.googleSignIn) {
 }
 
 // ============================================================
-// KIMLIK DOGRULAMA - Google Sign-In (Global + Fallback)
+// KIMLIK DOGRULAMA - Google Sign-In (Real Handler)
 // ============================================================
 
 async function handleGoogleSignIn(e) {
+  // EMERGENCY: alert always works, even if toast fails
+  alert('Button clicked - processing...');
+  console.log('handleGoogleSignIn called');
+
   const btn = e.target.closest ? e.target.closest('#googleSignIn') : document.getElementById('googleSignIn');
-  if (!btn) return;
+  if (!btn) {
+    alert('Button not found!');
+    return;
+  }
 
   // Immediate feedback for mobile users
-  showToast('Giris baslatiliyor...', 'info');
+  try {
+    showToast('Giris baslatiliyor...', 'info');
+  } catch (err) {
+    console.error('Toast failed:', err);
+  }
 
   if (!firebaseReady || !window._fb) {
-    showToast('Sistem hazirlaniyor, lutfen bekleyin...', 'warning');
+    try { showToast('Sistem hazirlaniyor, lutfen bekleyin...', 'warning'); } catch(e){}
     const ok = await initModules();
     if (!ok || !firebaseReady) {
-      showToast('Internet baglantisi yok - cevrimdisi modu kullanin', 'error');
+      try { showToast('Internet baglantisi yok - cevrimdisi modu kullanin', 'error'); } catch(e){}
+      alert('Internet baglantisi yok - cevrimdisi modu kullanin');
       btn.classList.remove('is-loading');
       return;
     }
@@ -700,11 +713,15 @@ async function handleGoogleSignIn(e) {
       'auth/operation-not-supported-in-this-environment': 'Bu ortamda islem desteklenmiyor.'
     };
     const userMsg = errorMessages[e.code] || ('Giris basarisiz: ' + (e.message || e.code));
-    showToast(userMsg, 'error');
+    try { showToast(userMsg, 'error'); } catch(err){}
+    alert(userMsg);
   }
 }
 
-// Global inline handler for HTML onclick attribute
+// Store real handler so inline HTML script can call it
+window._realGoogleSignIn = handleGoogleSignIn;
+
+// Override the inline fallback with the real one (runs after app.js loads)
 window.handleGoogleSignInInline = async function(e) {
   e.preventDefault();
   e.stopPropagation();
