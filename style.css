@@ -1,5 +1,5 @@
 /* ============================================================
-   نظام متابعة المخدومات — Fixed & Offline Ready
+   نظام متابعة الحضور والغياب — Fixed & Offline Ready
    ============================================================ */
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -83,12 +83,10 @@
 [data-theme="dark"] .bottom-nav { background: #161f35; border-color: #2a3650; }
 [data-theme="dark"] .modal { background: var(--surface); }
 [data-theme="dark"] .modal-header { background: #0e1525; }
-
 [data-theme="dark"] .nav-btn { color: #5a6a8a; }
 [data-theme="dark"] .today-card { background: linear-gradient(135deg, #1e2d4d 0%, #2a3d6b 100%); }
 [data-theme="dark"] .cal-day.empty { background: transparent; }
 [data-theme="dark"] .service-dot { background: var(--accent); }
-[data-theme="dark"] 
 [data-theme="dark"] .filter-select { background: #131c30; color: var(--text); border-color: #2a3650; }
 [data-theme="dark"] .edit-btn { background: #1e293b; }
 [data-theme="dark"] .grade-badge { background: rgba(201,214,240,0.15); color: var(--primary); }
@@ -97,7 +95,6 @@
 [data-theme="dark"] .cal-wday { color: #8892a8; }
 [data-theme="dark"] .cal-day.service-day { background: rgba(201,214,240,0.08); }
 [data-theme="dark"] .activity-detail-tabs { background: #0f1525; }
-[data-theme="dark"] 
 [data-theme="dark"] .splash { background: linear-gradient(160deg, #0f1525 0%, #1a2744 50%, #0f1525 100%); }
 [data-theme="dark"] .login-bg {
   background: #0a1a38;
@@ -108,7 +105,9 @@
 [data-theme="dark"] .export-btn.csv { background: rgba(46,204,113,0.15); }
 [data-theme="dark"] .export-btn.json { background: rgba(52,152,219,0.15); }
 [data-theme="dark"] .export-btn.print { background: rgba(26,39,68,0.2); }
-
+[data-theme="dark"] .rating-section label { color: var(--text-muted); }
+[data-theme="dark"] .star { color: #3a4560; }
+[data-theme="dark"] .star.selected { color: var(--accent); }
 
 html { font-size: 16px; -webkit-text-size-adjust: 100%; }
 
@@ -137,7 +136,7 @@ body {
   display: flex; align-items: center; justify-content: center;
   transition: opacity 0.5s ease;
 }
-.splash.fade-out { opacity: 0; pointer-events: none; visibility: hidden; }
+.splash.fade-out { opacity: 0; pointer-events: none; }
 .splash-content { text-align: center; color: white; }
 .splash-cross {
   font-size: 64px; display: block; margin-bottom: 16px;
@@ -191,8 +190,8 @@ body {
   border-radius: 0 0 20px 20px;
   border-bottom: 2px solid rgba(212, 175, 55, 0.3);
   box-shadow: 0 4px 20px rgba(0,0,0,0.15);
-  opacity: 1;
-  transform: scale(1);
+  opacity: 0;
+  transform: scale(1.03);
   animation: heroReveal 600ms cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
 }
 @keyframes heroReveal {
@@ -224,12 +223,10 @@ body {
   flex-direction: column;
   align-items: center;
   overflow-y: auto;
-  opacity: 1;
-  transform: translateY(0);
-}
-.login-card.animate-in {
   opacity: 0;
   transform: translateY(40px);
+}
+.login-card.animate-in {
   animation: cardSlideUp 800ms cubic-bezier(0.34, 1.56, 0.64, 1) 300ms forwards;
 }
 @keyframes cardSlideUp {
@@ -254,12 +251,10 @@ body {
   line-height: 1;
   margin-bottom: 16px;
   filter: drop-shadow(0 0 8px rgba(212, 175, 55, 0.3));
-  opacity: 1;
-  transform: scale(1);
-}
-.login-cross-icon.animate-in {
   opacity: 0;
   transform: scale(0.8);
+}
+.login-cross-icon.animate-in {
   animation: crossBounce 400ms cubic-bezier(0.34, 1.56, 0.64, 1) 500ms forwards;
 }
 @keyframes crossBounce {
@@ -273,12 +268,10 @@ body {
   color: #0F2B5B;
   margin-bottom: 4px;
   letter-spacing: 0;
-  opacity: 1;
-  transform: translateY(0);
-}
-.login-church-name.animate-in {
   opacity: 0;
   transform: translateY(10px);
+}
+.login-church-name.animate-in {
   animation: fadeSlideUp 400ms ease-out 580ms forwards;
 }
 /* System Title */
@@ -289,12 +282,10 @@ body {
   color: #3D4A5C;
   margin-bottom: 20px;
   letter-spacing: 0;
-  opacity: 1;
-  transform: translateY(0);
-}
-.login-system-title.animate-in {
   opacity: 0;
   transform: translateY(10px);
+}
+.login-system-title.animate-in {
   animation: fadeSlideUp 400ms ease-out 660ms forwards;
 }
 /* Gold Divider */
@@ -337,12 +328,10 @@ body {
   color: #3D4A5C;
   margin-bottom: 24px;
   letter-spacing: 0;
-  opacity: 1;
-  transform: translateY(0);
-}
-.login-welcome.animate-in {
   opacity: 0;
   transform: translateY(10px);
+}
+.login-welcome.animate-in {
   animation: fadeSlideUp 400ms ease-out 820ms forwards;
 }
 @keyframes fadeSlideUp {
@@ -368,12 +357,10 @@ body {
   box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   min-height: 52px;
   touch-action: manipulation;
-  opacity: 1;
-  transform: translateY(0);
-}
-.btn-google.animate-in {
   opacity: 0;
   transform: translateY(15px);
+}
+.btn-google.animate-in {
   animation: fadeSlideUp 400ms cubic-bezier(0.25, 0.1, 0.25, 1) 1060ms forwards;
 }
 .btn-google:hover {
@@ -419,9 +406,6 @@ body {
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
-
-
-
 
 /* Reduced motion support */
 @media (prefers-reduced-motion: reduce) {
@@ -817,7 +801,6 @@ body {
 .att-info { flex: 1; display: flex; flex-direction: column; gap: 2px; }
 .att-name { font-size: 16px; font-weight: 600; }
 
-
 .att-note { font-size: 13px; color: var(--text-muted); }
 .att-status-text { font-size: 13px; font-weight: 600; flex-shrink: 0; }
 .att-status-text.present { color: var(--green); }
@@ -878,10 +861,6 @@ body {
   background: rgba(26,39,68,0.04); border-radius: 8px;
 }
 
-
-
-
-
 /* ============================================================
    GIRLS PAGE
    ============================================================ */
@@ -927,8 +906,6 @@ body {
   min-width: var(--tap-target); min-height: var(--tap-target);
   display: flex; align-items: center; justify-content: center;
 }
-
-
 
 /* ============================================================
    TIMESTAMP SECTION (Add/Edit Employee)
@@ -1009,6 +986,42 @@ body {
 }
 [data-theme="dark"] .timestamp-section {
   background: #131c30;
+}
+
+/* ============================================================
+   RATING SECTION
+   ============================================================ */
+.rating-section {
+  margin-bottom: 16px;
+}
+.rating-section label {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--primary);
+  margin-bottom: 8px;
+}
+.stars-input {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  direction: ltr;
+}
+.star {
+  font-size: 32px;
+  color: #d0d4dc;
+  cursor: pointer;
+  transition: all 0.2s;
+  user-select: none;
+  line-height: 1;
+}
+.star:hover,
+.star.selected {
+  color: var(--accent);
+  transform: scale(1.1);
+}
+.star:active {
+  transform: scale(0.95);
 }
 
 /* ============================================================
@@ -1204,8 +1217,6 @@ body {
 .rank-grade { font-size: 12px; color: var(--text-muted); }
 .rank-count { font-size: 14px; font-weight: 700; color: var(--green); }
 
-
-
 /* ============================================================
    HISTORY PAGE
    ============================================================ */
@@ -1363,9 +1374,6 @@ body {
   text-align: center;
 }
 
-/* Activity Stat Card - Absent count */
-
-
 /* Dark mode for export */
 [data-theme="dark"] .export-mode-option {
   background: #1e293b;
@@ -1466,7 +1474,8 @@ textarea.form-input { resize: none; }
   transition: transform 0.2s, box-shadow 0.2s;
   min-height: var(--tap-target);
   touch-action: manipulation;
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center; justify-content: center;
   gap: 6px;
 }
 .btn-danger:active { transform: scale(0.97); }
@@ -1480,7 +1489,8 @@ textarea.form-input { resize: none; }
   transition: transform 0.2s, box-shadow 0.2s;
   min-height: var(--tap-target);
   touch-action: manipulation;
-  display: flex; align-items: center; justify-content: center;
+  display: flex;
+  align-items: center; justify-content: center;
   gap: 6px;
 }
 .btn-share:active { transform: scale(0.97); }
@@ -1499,8 +1509,6 @@ textarea.form-input { resize: none; }
 .attend-btn.absent { background: rgba(231,76,60,0.1); color: var(--red); border-color: var(--red); }
 .attend-btn.present.selected { background: var(--green); color: white; }
 .attend-btn.absent.selected { background: var(--red); color: white; }
-
-
 
 /* Profile Modal */
 .profile-info {
@@ -1542,6 +1550,145 @@ textarea.form-input { resize: none; }
 .profile-stat .ps-value.green { color: var(--green); }
 .profile-stat .ps-value.red { color: var(--red); }
 .profile-stat .ps-value.orange { color: var(--orange); }
+
+/* ============================================================
+   ACTIVITY DETAIL MODAL
+   ============================================================ */
+.detail-summary-bar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  background: var(--bg);
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+.summary-icon {
+  font-size: 36px;
+  flex-shrink: 0;
+}
+.summary-text {
+  flex: 1;
+}
+.summary-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--primary);
+}
+.summary-subtitle {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.summary-total {
+  font-size: 28px;
+  font-weight: 800;
+  color: var(--primary);
+  min-width: 40px;
+  text-align: center;
+}
+.activity-detail-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  background: var(--bg);
+  border-radius: 12px;
+  padding: 4px;
+}
+.activity-detail-tab {
+  flex: 1;
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+  font-family: 'Tajawal', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: transparent;
+  color: var(--text-muted);
+  min-height: var(--tap-target);
+  touch-action: manipulation;
+}
+.activity-detail-tab.active {
+  background: white;
+  color: var(--primary);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+[data-theme="dark"] .activity-detail-tab.active {
+  background: #1e293b;
+  color: var(--text);
+}
+.present-tab.active {
+  color: var(--green);
+}
+.absent-tab.active {
+  color: var(--red);
+}
+.tab-count {
+  background: rgba(26,39,68,0.1);
+  border-radius: 8px;
+  padding: 2px 8px;
+  font-size: 12px;
+  font-weight: 700;
+  margin-right: 4px;
+}
+.activity-detail-tab.active .tab-count {
+  background: rgba(26,39,68,0.15);
+}
+.detail-girl-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.detail-girl-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.detail-girl-item:active {
+  transform: scale(0.98);
+}
+.detail-girl-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
+  color: white;
+  font-size: 16px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.detail-girl-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text);
+}
+.detail-girl-grade {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+.detail-status-icon {
+  font-size: 20px;
+  font-weight: 700;
+  margin-right: auto;
+}
+.detail-status-icon.present {
+  color: var(--green);
+}
+.detail-status-icon.absent {
+  color: var(--red);
+}
 
 /* ============================================================
    CONFIRM MODAL
@@ -1638,8 +1785,6 @@ textarea.form-input { resize: none; }
   background: rgba(232, 160, 32, 0.3);
 }
 
-
-
 /* ============================================================
    UTILS
    ============================================================ */
@@ -1664,4 +1809,4 @@ input[type="date"], input[type="month"] {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-      }
+}

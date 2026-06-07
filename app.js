@@ -1,5 +1,5 @@
 // ============================================================
-// نظام الحضور والغياب — Offline Ready & Guest Mode
+// نظام الحضور والغياب — Offline Ready
 // ============================================================
 
 // ============================================================
@@ -14,9 +14,7 @@ window.addEventListener('unhandledrejection', (e) => {
   hideSplashForced();
 });
 
-// Force hide splash after 2.5 seconds max — never get stuck
-setTimeout(hideSplashForced, 2500);
-
+// Force hide splash after 6 seconds max — never get stuck
 let splashForceHidden = false;
 function hideSplashForced() {
   if (splashForceHidden) return;
@@ -24,18 +22,19 @@ function hideSplashForced() {
   const splash = document.getElementById('splash');
   if (splash) {
     splash.classList.add('fade-out');
-    setTimeout(() => { splash.style.display = 'none'; splash.remove(); }, 500);
+    setTimeout(() => splash.remove(), 500);
   }
-  // Always show login if mainApp is not visible yet
+  // Show login screen as fallback if app isn't initialized
   setTimeout(() => {
     const loginScreen = document.getElementById('loginScreen');
     const mainApp = document.getElementById('mainApp');
-    if (loginScreen && mainApp && mainApp.classList.contains('hidden')) {
+    if (loginScreen && mainApp && mainApp.classList.contains('hidden') && loginScreen.classList.contains('hidden')) {
       loginScreen.classList.remove('hidden');
-      if (typeof showLogin === 'function') showLogin();
+      showLogin();
     }
-  }, 550);
+  }, 600);
 }
+setTimeout(hideSplashForced, 6000);
 
 // ============================================================
 // FIREBASE IMPORTS WITH FALLBACK
@@ -48,7 +47,7 @@ let XLSX = null;
 async function initModules() {
   try {
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-    const { getAuth, GoogleAuthProvider, OAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+    const { getAuth, GoogleAuthProvider, onAuthStateChanged, signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
     const { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
 
     const firebaseConfig = {
@@ -65,11 +64,10 @@ async function initModules() {
     auth = getAuth(firebaseApp);
     db = getFirestore(firebaseApp);
     provider = new GoogleAuthProvider();
-    const appleProvider = new OAuthProvider('apple.com');
     firebaseReady = true;
 
     // Attach Firebase functions to global scope for the app
-    window._fb = { collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where, signInWithPopup, signInWithRedirect, getRedirectResult, onAuthStateChanged, signOut, appleProvider };
+    window._fb = { collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where, signOut };
 
     // Try to load XLSX
     try {
@@ -96,7 +94,7 @@ const $$ = (sel, root = document) => root.querySelectorAll(sel);
 const DOM = {
   splash: $('splash'), loginScreen: $('loginScreen'), mainApp: $('mainApp'),
   pageTitle: $('pageTitle'), pageSubtitle: $('pageSubtitle'),
-  syncIndicator: $('syncIndicator'), userAvatar: $('userAvatar'),
+  userAvatar: $('userAvatar'),
   drawer: $('drawer'), drawerOverlay: $('drawerOverlay'),
   drawerAvatar: $('drawerAvatar'), drawerUserName: $('drawerUserName'),
   drawerUserEmail: $('drawerUserEmail'), offlineBadge: $('offlineBadge'),
@@ -104,10 +102,7 @@ const DOM = {
   globalSearch: $('globalSearch'), searchResults: $('searchResults'),
   todayDay: $('todayDay'), todayDate: $('todayDate'), todayServiceBadge: $('todayServiceBadge'),
   statTotal: $('statTotal'), statPresentToday: $('statPresentToday'),
-  statAbsentToday: $('statAbsentToday'), statAvgRating: $('statAvgRating'),
-  bestGrade: $('bestGrade'), bestGradePercent: $('bestGradePercent'),
-  topActivityName: $('topActivityName'), topActivityCount: $('topActivityCount'),
-  mostRegularGirl: $('mostRegularGirl'), mostRegularPercent: $('mostRegularPercent'),
+  statAbsentToday: $('statAbsentToday'),
   topAttendees: $('topAttendees'), needsFollowup: $('needsFollowup'),
   attendanceDate: $('attendanceDate'), attendanceList: $('attendanceList'),
   attendanceSearch: $('attendanceSearch'),
@@ -119,7 +114,7 @@ const DOM = {
   dayDetail: $('dayDetail'), calPrev: $('calPrev'), calNext: $('calNext'),
   statsMonth: $('statsMonth'), bigStatsGrid: $('bigStatsGrid'),
   absenceChart: $('absenceChart'), attendanceRanking: $('attendanceRanking'),
-  activityStatsGrid: $('activityStatsGrid'), timeFilterTabs: $('timeFilterTabs'), activityStatsPeriod: $('activityStatsPeriod'),
+  timeFilterTabs: $('timeFilterTabs'),
   historyList: $('historyList'), historyFilter: $('historyFilter'),
   clearHistoryBtn: $('clearHistoryBtn'), loadMoreHistory: $('loadMoreHistory'),
   loadMoreHistoryBtn: $('loadMoreHistoryBtn'), exportMonth: $('exportMonth'),
@@ -127,7 +122,6 @@ const DOM = {
   girlModal: $('girlModal'), girlModalTitle: $('girlModalTitle'),
   girlName: $('girlName'), girlPhone: $('girlPhone'), girlGrade: $('girlGrade'),
   girlNotes: $('girlNotes'), deleteGirlBtn: $('deleteGirlBtn'),
-  homeGradeFilters: $('homeGradeFilters'), girlsGradeFilters: $('girlsGradeFilters'),
   closeGirlModal: $('closeGirlModal'), cancelGirlModal: $('cancelGirlModal'),
   saveGirlBtn: $('saveGirlBtn'), girlProfileModal: $('girlProfileModal'),
   profileName: $('profileName'), profileBody: $('profileBody'),
@@ -151,11 +145,9 @@ const DOM = {
   activityDetailList: $('activityDetailList'),
   presentTabCount: $('presentTabCount'),
   absentTabCount: $('absentTabCount'),
-  menuBtn: $('menuBtn'), signOutBtn: $('signOutBtn'), googleSignIn: $('googleSignIn'), 
+  menuBtn: $('menuBtn'), signOutBtn: $('signOutBtn'), googleSignIn: $('googleSignIn'),
   darkModeToggle: $('darkModeToggle'), darkToggleSwitch: $('darkToggleSwitch'),
-  shareProfileBtn: $('shareProfileBtn'), editProfileBtn: $('editProfileBtn'),
-  statsGradeFilter: $('statsGradeFilter'),
-  activityStatsGrade: $('activityStatsGrade')
+  shareProfileBtn: $('shareProfileBtn'), editProfileBtn: $('editProfileBtn')
 };
 
 // ============================================================
@@ -177,14 +169,14 @@ const OfflineQueue = {
   async add(operation) {
     const op = {
       id: 'op_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7),
-      type: operation.type, // 'saveGirl', 'saveAttendance', 'deleteGirl', 'deleteAttendance'
+      type: operation.type,
       data: operation.data,
       timestamp: Date.now(),
       retries: 0
     };
     this.queue.push(op);
     try { await IDB.add('pendingSync', op); } catch (e) {}
-    showToast('تم الحفظ محلياً — سيتم الرفع عند توفر الإنترنت', 'warning');
+    showToast('تم الحفظ محلياً — سيتم الرفع عند توفر الانترنت', 'warning');
     this.trySync();
   },
 
@@ -243,9 +235,8 @@ const OfflineQueue = {
         console.error('Sync operation failed:', op.type, e);
         op.retries++;
         if (op.retries >= 5) {
-          await this.remove(op.id); // Drop after 5 retries
+          await this.remove(op.id);
         } else {
-          // Update retry count in IDB
           try { await IDB.add('pendingSync', op); } catch (e2) {}
         }
       }
@@ -253,7 +244,7 @@ const OfflineQueue = {
 
     this.isSyncing = false;
     if (this.queue.length > 0) {
-      setTimeout(() => this.trySync(), 30000); // Retry in 30 seconds
+      setTimeout(() => this.trySync(), 30000);
     } else {
       showToast('تمت مزامنة جميع البيانات مع السحابة', 'success');
     }
@@ -266,24 +257,21 @@ const OfflineQueue = {
 function updateOnlineStatus() {
   const isOnline = navigator.onLine;
 
-  // Header badge
   const headerBadge = document.getElementById('offlineBadgeHeader');
   if (headerBadge) {
     headerBadge.classList.toggle('hidden', isOnline);
   }
 
-  // Drawer badge
   const drawerBadge = document.getElementById('offlineBadge');
   if (drawerBadge) {
     drawerBadge.style.display = isOnline ? 'none' : 'block';
   }
 
   if (isOnline && !OfflineQueue.lastOnline) {
-    // Just came back online
     showToast('تم استعادة الاتصال — جاري المزامنة...', 'success');
     OfflineQueue.trySync();
   } else if (!isOnline && OfflineQueue.lastOnline) {
-    showToast('انقطع الاتصال — العمليات ستُحفظ محلياً', 'warning');
+    showToast('انقطع الاتصال — العمليات سيُحفظ محلياً', 'warning');
   }
 
   OfflineQueue.lastOnline = isOnline;
@@ -303,7 +291,7 @@ const state = {
   selectedDay: getCurrentServiceDay() || 'السبت',
   selectedActivity: 'عام',
   currentAttendanceGirlId: null,
-  
+  currentAttendanceRating: 0,
   editingGirlId: null,
   calendarDate: new Date(),
   appInitialized: false,
@@ -314,22 +302,24 @@ const state = {
   homeGradeFilter: '',
   girlsGradeFilter: '',
   girlsSearchQuery: '',
-  statsTimeFilter: 'today', // default: today (matches new button order)
+  statsTimeFilter: 'today',
   statsGradeFilter: '',
   longPressTimer: null,
   isLongPress: false,
-  
   currentProfileGirlId: null,
   searchDebounceTimer: null,
   attSearchDebounceTimer: null,
   attendancePageInitialized: false,
   savingGirl: false,
+  currentActivityDetail: null,
+  activityDetailTab: 'present',
+  idb: false
 };
 
 const HISTORY_PAGE_SIZE = 30;
 // Work days: Saturday through Thursday (6 days). Friday is off.
 const SERVICE_DAYS = { 'السبت': true, 'الأحد': true, 'الاثنين': true, 'الثلاثاء': true, 'الأربعاء': true, 'الخميس': true };
-const SERVICE_DAY_NUMBERS = [0, 1, 2, 3, 4, 6]; // Sun=0, Mon=1, Tue=2, Wed=3, Thu=4, Sat=6 (all except Fri=5)
+const SERVICE_DAY_NUMBERS = [0, 1, 2, 3, 4, 6];
 const DAY_NAMES = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 
 // Map JS day number (0=Sun..6=Sat) to Arabic work day name
@@ -439,9 +429,8 @@ function hasConsecutiveAbsences(girlId, monthStr) {
   return { hasConsecutive: false, count: absDates.length, dates: absDates };
 }
 
-
 // ============================================================
-// UNIFIED STATS BOUNDS — All stats use this single function
+// UNIFIED STATS BOUNDS
 // ============================================================
 function getStatsBounds() {
   const selectedDate = DOM.statsMonth && DOM.statsMonth.value ? DOM.statsMonth.value : DateUtil.toStr();
@@ -453,7 +442,21 @@ function getStatsBounds() {
       return { start: selectedDate.substring(0, 7) + '-01', end: selectedDate };
     case 'year':
       return { start: selectedDate.substring(0, 4) + '-01-01', end: selectedDate };
-    default: // 'all'
+    default:
+      return { start: '2000-01-01', end: selectedDate };
+  }
+}
+
+function getPeriodBounds(period, customDate) {
+  const selectedDate = customDate || DateUtil.toStr();
+  switch (period) {
+    case 'today':
+      return { start: selectedDate, end: selectedDate };
+    case 'month':
+      return { start: selectedDate.substring(0, 7) + '-01', end: selectedDate };
+    case 'year':
+      return { start: selectedDate.substring(0, 4) + '-01-01', end: selectedDate };
+    default:
       return { start: '2000-01-01', end: selectedDate };
   }
 }
@@ -605,20 +608,15 @@ function hideSplash() {
   splashForceHidden = true;
   if (DOM.splash) {
     DOM.splash.classList.add('fade-out');
-    setTimeout(() => {
-      if (DOM.splash) { DOM.splash.style.display = 'none'; DOM.splash.remove(); }
-    }, 500);
+    setTimeout(() => { if (DOM.splash) DOM.splash.remove(); }, 500);
   }
 }
 
 // ============================================================
-// ONLINE / OFFLINE
+// AUTH — Fixed with better error handling
 // ============================================================
+let authListenersAttached = false;
 
-
-// ============================================================
-// AUTH — Fixed with better error handling + Guest Mode
-// ============================================================
 async function initAuth() {
   if (!firebaseReady || !window._fb) {
     console.error('Firebase not available');
@@ -628,8 +626,11 @@ async function initAuth() {
   }
 
   try {
-    const { getRedirectResult, onAuthStateChanged } = window._fb;
-    try { await getRedirectResult(auth); } catch (e) { console.error('getRedirectResult error:', e); }
+    const { onAuthStateChanged } = window._fb;
+
+    // Prevent duplicate listeners
+    if (authListenersAttached) return;
+    authListenersAttached = true;
 
     onAuthStateChanged(auth, async (user) => {
       hideSplash();
@@ -656,44 +657,33 @@ async function initAuth() {
   }
 }
 
-// Guest Sign In
-
-
 if (DOM.googleSignIn) {
   DOM.googleSignIn.addEventListener('click', async () => {
-    // Wait for Firebase to be ready (up to 5 seconds)
     if (!firebaseReady || !window._fb) {
-      DOM.googleSignIn.classList.add('is-loading');
-      let waited = 0;
-      while ((!firebaseReady || !window._fb) && waited < 5000) {
-        await new Promise(r => setTimeout(r, 200));
-        waited += 200;
-      }
-    }
-    if (!firebaseReady || !window._fb) {
-      DOM.googleSignIn.classList.remove('is-loading');
-      showToast('تعذر الاتصال، تأكد من الإنترنت وأعد المحاولة', 'warning');
+      showToast('الانترنت غير متاح - استخدم وضع عدم الاتصال', 'warning');
       return;
     }
     DOM.googleSignIn.classList.add('is-loading');
     try {
-      const { signInWithPopup } = window._fb;
+      const { signInWithPopup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
       await signInWithPopup(auth, provider);
     } catch (e) {
       DOM.googleSignIn.classList.remove('is-loading');
-      if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e.code)) {
-        try {
-          const { signInWithRedirect } = window._fb;
-          await signInWithRedirect(auth, provider);
-        } catch (e2) { showToast('فشل تسجيل الدخول: ' + e2.message, 'error'); }
-      } else {
-        showToast('فشل تسجيل الدخول: ' + e.message, 'error');
-      }
+      console.error('Sign-in error:', e.code, e.message);
+      // Map known error codes to user-friendly messages
+      const errorMessages = {
+        'auth/popup-blocked': 'تم حجب النافذة المنبثقة. الرجاء السماح بالنوافذ المنبثقة.',
+        'auth/popup-closed-by-user': 'تم اغلاق نافذة تسجيل الدخول.',
+        'auth/cancelled-popup-request': 'تم الغاء طلب تسجيل الدخول.',
+        'auth/network-request-failed': 'فشل الاتصال بالشبكة. تحقق من اتصال الانترنت.',
+        'auth/invalid-api-key': 'مفتاح API غير صالح.',
+        'auth/operation-not-supported-in-this-environment': 'العملية غير مدعومة في هذا البي.'
+      };
+      const userMsg = errorMessages[e.code] || ('فشل تسجيل الدخول: ' + (e.message || e.code));
+      showToast(userMsg, 'error');
     }
   });
 }
-
-
 
 if (DOM.signOutBtn) {
   DOM.signOutBtn.addEventListener('click', async () => {
@@ -703,8 +693,16 @@ if (DOM.signOutBtn) {
       showLogin();
       return;
     }
-    const { signOut } = window._fb;
-    await signOut(auth);
+    try {
+      const { signOut } = window._fb;
+      await signOut(auth);
+    } catch (e) {
+      console.error('Sign-out error:', e);
+      // Force logout locally even if Firebase fails
+      state.currentUser = null;
+      state.appInitialized = false;
+      showLogin();
+    }
   });
 }
 
@@ -717,7 +715,7 @@ function showApp(user) {
     card.classList.remove('animate-in');
     card.querySelectorAll('.animate-in').forEach(el => el.classList.remove('animate-in'));
   }
-  const initial = user && user.displayName ? user.displayName[0] : 'خ';
+  const initial = user && user.displayName ? user.displayName[0] : 'م';
   if (DOM.userAvatar) DOM.userAvatar.textContent = initial;
   if (DOM.drawerAvatar) DOM.drawerAvatar.textContent = initial;
   if (DOM.drawerUserName) DOM.drawerUserName.textContent = (user && user.displayName) || 'المستخدم';
@@ -732,7 +730,7 @@ function showLogin() {
       const card = document.getElementById('loginCard');
       if (card) {
         card.classList.add('animate-in');
-        card.querySelectorAll('.login-cross-icon, .login-church-name, .login-system-title, .login-divider, .login-welcome, .btn-google, .btn-apple, .btn-guest, .login-hint').forEach(el => {
+        card.querySelectorAll('.login-cross-icon, .login-church-name, .login-system-title, .login-divider, .login-welcome, .btn-google').forEach(el => {
           el.classList.add('animate-in');
         });
       }
@@ -743,11 +741,14 @@ function showLogin() {
 // ============================================================
 // FIREBASE LISTENERS
 // ============================================================
+let dataListenersInitialized = false;
+
 async function loadData() {
   try {
     if (!firebaseReady || !window._fb) return;
-
-    const { getDocs, query, collection, orderBy, onSnapshot, doc, setDoc } = window._fb;
+    // Prevent duplicate listeners on re-auth
+    if (dataListenersInitialized) return;
+    dataListenersInitialized = true;
 
     const { onSnapshot: _onSnapshot, query: _query, collection: _collection, orderBy: _orderBy } = window._fb;
 
@@ -826,10 +827,10 @@ function renderPage() {
 // ============================================================
 const PAGE_TITLES = {
   home: ['الرئيسية', ''],
-  attendance: ['الحضور اليومي', 'تسجيل وإدارة الحضور'],
+  attendance: ['الحضور اليومي', 'تسجيل وادارة الحضور'],
   girls: ['الموظفين', 'قائمة الموظفين'],
-  calendar: ['التقويم الشهري', 'أيام الخدمة'],
-  stats: ['الإحصائيات', 'تحليلات وتقارير'],
+  calendar: ['التقويم الشهري', 'ايام العمل'],
+  stats: ['الاحصائيات', 'تحليلات وتقارير'],
   history: ['السجل', 'سجل التعديلات'],
   export: ['التصدير', 'تصدير البيانات']
 };
@@ -880,16 +881,7 @@ function closeDrawer() {
 }
 
 // ============================================================
-// SMART STATS
-// ============================================================
-
-
-
-
-
-
-// ============================================================
-// HOME PAGE — FIXED: Auto-count absences on service days
+// HOME PAGE — Fixed
 // ============================================================
 function renderHome() {
   const now = new Date();
@@ -929,7 +921,6 @@ function renderHome() {
   activeGirls.forEach(g => {
     const records = todayRecordsByGirl[g.id];
     if (records && records.length > 0) {
-      // Girl has attendance records - check if any are present
       const hasAnyPresent = records.some(r => r.status === 'حاضر');
       if (hasAnyPresent) presentGirlIds.add(g.id);
       else absentGirlIds.add(g.id);
@@ -942,41 +933,7 @@ function renderHome() {
   if (DOM.statPresentToday) DOM.statPresentToday.textContent = presentGirlIds.size;
   if (DOM.statAbsentToday) DOM.statAbsentToday.textContent = absentGirlIds.size;
 
-  
-
-  const bestGrade = getBestGradeFiltered(monthStr, gradeFilter);
-  if (DOM.bestGrade && DOM.bestGradePercent) {
-    if (bestGrade && bestGrade.percent > 0) {
-      DOM.bestGrade.textContent = bestGrade.grade;
-      DOM.bestGradePercent.textContent = `${Math.round(bestGrade.percent)}% حضور`;
-    } else {
-      DOM.bestGrade.textContent = gradeFilter || '-';
-      DOM.bestGradePercent.textContent = gradeFilter ? 'لا توجد بيانات' : 'أفضل قسم';
-    }
-  }
-
-  const topActivity = getTopActivityFiltered(monthStr, gradeFilter);
-  if (DOM.topActivityName && DOM.topActivityCount) {
-    if (topActivity) {
-      DOM.topActivityName.textContent = topActivity.name;
-      DOM.topActivityCount.textContent = `${topActivity.count} حضور`;
-    } else {
-      DOM.topActivityName.textContent = '-';
-      DOM.topActivityCount.textContent = 'أكثر قسم حضوراً';
-    }
-  }
-
-  const mostRegular = getMostRegularGirlFiltered(monthStr, gradeFilter);
-  if (DOM.mostRegularGirl && DOM.mostRegularPercent) {
-    if (mostRegular) {
-      DOM.mostRegularGirl.textContent = mostRegular.name;
-      DOM.mostRegularPercent.textContent = `${mostRegular.count} يوم \u00B7 ${Math.round(mostRegular.percent)}%`;
-    } else {
-      DOM.mostRegularGirl.textContent = '-';
-      DOM.mostRegularPercent.textContent = 'أكثر موظف انتظاماً';
-    }
-  }
-
+  // === Top Attendees This Month ===
   const presentDatesByGirl = {};
   activeGirls.forEach(g => presentDatesByGirl[g.id] = new Set());
   Object.values(state.attendanceData).forEach(a => {
@@ -1007,7 +964,31 @@ function renderHome() {
     }
   }
 
-  
+  // === Needs Followup (consecutive absences) ===
+  if (DOM.needsFollowup) {
+    const followupGirls = [];
+    activeGirls.forEach(g => {
+      const result = hasConsecutiveAbsences(g.id, monthStr);
+      if (result.hasConsecutive) {
+        followupGirls.push({ girl: g, ...result });
+      }
+    });
+
+    if (followupGirls.length === 0) {
+      DOM.needsFollowup.innerHTML = '<div class="empty-state">لا يوجد موظفين يحتاجون متابعة هذا الشهر \u2705</div>';
+    } else {
+      const frag = document.createDocumentFragment();
+      followupGirls.forEach(({ girl, count }) => {
+        const div = document.createElement('div');
+        div.className = 'followup-item';
+        div.dataset.girlId = girl.id;
+        div.innerHTML = `<span class="followup-name">${esc(girl.name)}</span><span class="followup-badge">${count} غيابات متتالية</span>`;
+        frag.appendChild(div);
+      });
+      DOM.needsFollowup.innerHTML = '';
+      DOM.needsFollowup.appendChild(frag);
+    }
+  }
 }
 
 // ============================================================
@@ -1047,10 +1028,8 @@ function renderGirlsList() {
   const el = DOM.girlsList;
   if (!el) return;
 
-  
-
   if (!filtered.length) {
-    el.innerHTML = '<div class="empty-state">لا توجد موظفين<br><small>اضغط + لإضافة موظف جديدة</small></div>';
+    el.innerHTML = '<div class="empty-state">لا توجد موظفين<br><small>اضغط + لاضافة موظف جديد</small></div>';
     return;
   }
   const monthStr = DateUtil.getMonthStr(new Date());
@@ -1083,10 +1062,9 @@ function renderGirlsList() {
 if (DOM.addGirlBtn) {
   DOM.addGirlBtn.addEventListener('click', () => {
     state.editingGirlId = null;
-    if (DOM.girlModalTitle) DOM.girlModalTitle.textContent = 'إضافة موظف';
+    if (DOM.girlModalTitle) DOM.girlModalTitle.textContent = 'اضافة موظف';
     if (DOM.girlName) DOM.girlName.value = '';
     if (DOM.girlPhone) DOM.girlPhone.value = '';
-    if (DOM.girlGrade) DOM.girlGrade.value = '';
     if (DOM.girlNotes) DOM.girlNotes.value = '';
     if (DOM.deleteGirlBtn) DOM.deleteGirlBtn.classList.add('hidden');
     resetTimestampInputs();
@@ -1101,10 +1079,8 @@ function editGirl(id) {
   if (DOM.girlModalTitle) DOM.girlModalTitle.textContent = 'تعديل بيانات الموظف';
   if (DOM.girlName) DOM.girlName.value = g.name;
   if (DOM.girlPhone) DOM.girlPhone.value = g.phone || '';
-  if (DOM.girlGrade) DOM.girlGrade.value = g.grade;
   if (DOM.girlNotes) DOM.girlNotes.value = g.notes || '';
   if (DOM.deleteGirlBtn) DOM.deleteGirlBtn.classList.remove('hidden');
-  // Reset timestamp to auto mode for edits
   resetTimestampInputs();
   openModal('girlModal');
 }
@@ -1119,7 +1095,7 @@ if (DOM.deleteGirlBtn) {
 
     showConfirm({
       icon: '&#9888;', title: 'حذف موظف',
-      msg: `هل أنت متأكد من حذف "${esc(g.name)}"؟ سيتم حذف جميع بيانات الحضور الخاصة بها أيضاً.`,
+      msg: `هل انت متأكد من حذف "${esc(g.name)}"؟`,
       okLabel: 'حذف',
       okClass: 'confirm-delete',
       onOk: async () => {
@@ -1154,12 +1130,10 @@ if (DOM.deleteGirlBtn) {
                 }
               }
             } else {
-              // Queue for sync when back online
               await OfflineQueue.add({ type: 'deleteGirl', data: { id, ...deleteData } });
             }
           } catch (e) {
             console.error('Delete girl Firestore error:', e);
-            // Fallback: queue for sync
             await OfflineQueue.add({
               type: 'deleteGirl',
               data: { id, isDeleted: true, deletedAt: Date.now(), deletedBy: state.currentUser?.email || '', name: g.name, grade: g.grade }
@@ -1172,7 +1146,7 @@ if (DOM.deleteGirlBtn) {
           scheduleRender();
         } catch (err) {
           console.error('Delete error:', err);
-          showToast('حدث خطأ أثناء الحذف', 'error');
+          showToast('حدث خطأ اثناء الحذف', 'error');
         } finally {
           state.deleteInProgress = false;
         }
@@ -1184,7 +1158,7 @@ if (DOM.deleteGirlBtn) {
 // ============================================================
 // TIMESTAMP TOGGLE LOGIC
 // ============================================================
-let timestampMode = 'auto'; // 'auto' or 'manual'
+let timestampMode = 'auto';
 
 function initTimestampToggle() {
   const toggle = document.getElementById('timestampToggle');
@@ -1216,7 +1190,6 @@ function initTimestampToggle() {
     } else {
       if (inputs) inputs.classList.remove('hidden');
       if (autoMsg) autoMsg.style.display = 'none';
-      // Set defaults to current date/time if empty
       if (dateInput && !dateInput.value) {
         const now = new Date();
         dateInput.value = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
@@ -1270,20 +1243,18 @@ if (DOM.saveGirlBtn) {
     try {
       const name = DOM.girlName ? DOM.girlName.value.trim() : '';
       const phone = DOM.girlPhone ? DOM.girlPhone.value.trim() : '';
-      const grade = DOM.girlGrade ? DOM.girlGrade.value : '';
       const notes = DOM.girlNotes ? DOM.girlNotes.value.trim() : '';
 
-      if (!name) { showToast('الرجاء إدخال اسم الموظف', 'error'); return; }
+      if (!name) { showToast('الرجاء ادخال اسم الموظف', 'error'); return; }
 
       const normalizedName = normalizeName(name);
       const existingGirl = state.girls.find(g =>
         normalizeName(g.name) === normalizedName && g.id !== state.editingGirlId && !g.isDeleted
       );
-      if (existingGirl) { showToast('هذه الموظف موجودة بالفعل', 'error'); return; }
+      if (existingGirl) { showToast('هذا الموظف موجود بالفعل', 'error'); return; }
 
       const id = state.editingGirlId || 'girl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
       const customTimestamp = getTimestampFromInputs();
-      const now = Date.now();
 
       const girlData = {
         id, name, phone, grade: 'موظف', notes,
@@ -1300,7 +1271,7 @@ if (DOM.saveGirlBtn) {
         state.girls.push(girlData);
       }
 
-      await logHistory(state.editingGirlId ? 'تعديل موظف' : 'إضافة موظف', `${name} - موظف`, customTimestamp);
+      await logHistory(state.editingGirlId ? 'تعديل موظف' : 'اضافة موظف', `${name} - موظف`, customTimestamp);
 
       // Online: save directly. Offline: queue for sync.
       if (navigator.onLine && firebaseReady && window._fb) {
@@ -1308,7 +1279,6 @@ if (DOM.saveGirlBtn) {
           await window._fb.setDoc(window._fb.doc(db, 'girls', id), girlData);
         } catch (e) {
           console.error('Save girl Firestore error:', e);
-          // If failed, queue for later
           await OfflineQueue.add({ type: 'saveGirl', data: girlData });
         }
       } else {
@@ -1316,7 +1286,7 @@ if (DOM.saveGirlBtn) {
       }
 
       closeModal('girlModal');
-      showToast(state.editingGirlId ? 'تم تعديل البيانات' : 'تمت إضافة الموظف', 'success');
+      showToast(state.editingGirlId ? 'تم تعديل البيانات' : 'تمت اضافة الموظف', 'success');
       state.editingGirlId = null;
       resetTimestampInputs();
       renderPage();
@@ -1342,8 +1312,6 @@ function showGirlProfile(id) {
   const presentCount = girlAtt.filter(a => a.status === 'حاضر').length;
   const absentCount = girlAtt.filter(a => a.status === 'غائب').length;
   const attendanceRate = totalRecords > 0 ? Math.round((presentCount / totalRecords) * 100) : 0;
-  const ratings = girlAtt.filter(a => a.rating > 0).map(a => a.rating);
-  const avgRating = ratings.length ? (ratings.reduce((a, b) => a + b, 0) / ratings.length).toFixed(1) : '0';
   const lastAttendance = girlAtt.find(a => a.status === 'حاضر');
   const lastDate = lastAttendance ? lastAttendance.date : '-';
 
@@ -1365,9 +1333,8 @@ function showGirlProfile(id) {
     <div class="profile-stat"><div class="ps-value green">${presentCount}</div><div class="ps-label">مرات الحضور</div></div>
     <div class="profile-stat"><div class="ps-value red">${absentCount}</div><div class="ps-label">مرات الغياب</div></div>
     <div class="profile-stat"><div class="ps-value orange">${attendanceRate}%</div><div class="ps-label">نسبة الحضور</div></div>
-    
-    <div class="profile-stat"><div class="ps-value">${totalRecords}</div><div class="ps-label">إجمالي السجلات</div></div>
-    <div class="profile-stat"><div class="ps-value">${lastDate}</div><div class="ps-label">آخر حضور</div></div>
+    <div class="profile-stat"><div class="ps-value">${totalRecords}</div><div class="ps-label">اجمالي السجلات</div></div>
+    <div class="profile-stat"><div class="ps-value">${lastDate}</div><div class="ps-label">اخر حضور</div></div>
   </div>`;
 
   if (!Object.keys(months).length) {
@@ -1418,8 +1385,8 @@ if (DOM.shareProfileBtn) {
     const absentCount = girlAtt.filter(a => a.status === 'غائب').length;
     const attendanceRate = girlAtt.length > 0 ? Math.round((presentCount / girlAtt.length) * 100) : 0;
 
-      const shareText = `👧 ${g.name}
-📚 ${g.grade}
+    const shareText = `${g.name}
+${g.grade}
 \u2705 حضور: ${presentCount}
 \u274C غياب: ${absentCount}
 \uD83D\uDCCA نسبة: ${attendanceRate}%
@@ -1439,9 +1406,8 @@ if (DOM.shareProfileBtn) {
 }
 
 // ============================================================
-// ATTENDANCE PAGE — FIXED: Reliable auto-absence on service days
+// ATTENDANCE PAGE — Fixed
 // ============================================================
-// Returns the Arabic work day name for today, or null if today is Friday (non-working day)
 function getCurrentServiceDay() {
   const dayOfWeek = new Date().getDay();
   return JS_DAY_TO_ARABIC[dayOfWeek] || null;
@@ -1489,7 +1455,6 @@ function setActiveDay(day) {
   $$('.day-btn').forEach(b => b.classList.toggle('active', b.dataset.day === day));
 }
 
-
 $$('.day-btn').forEach(b => b.addEventListener('click', () => {
   setActiveDay(b.dataset.day);
   state.attendancePageInitialized = false;
@@ -1526,6 +1491,7 @@ async function toggleAttendanceStatus(girlId, girlName, date) {
     activity: 'عام',
     status: newStatus,
     notes: existing?.notes || '',
+    rating: existing?.rating || 0,
     updatedAt: Date.now(),
     updatedBy: state.currentUser?.displayName || 'مستخدم',
     updatedByEmail: state.currentUser?.email || ''
@@ -1573,6 +1539,7 @@ async function markAllAbsentForDate(date) {
         activity: 'عام',
         status: 'غائب',
         notes: '',
+        rating: 0,
         updatedAt: Date.now(),
         updatedBy: state.currentUser?.displayName || 'مستخدم',
         updatedByEmail: state.currentUser?.email || ''
@@ -1611,21 +1578,17 @@ async function markAllAbsentForDate(date) {
   if (state.currentPage === 'calendar') renderCalendar();
 }
 
-// Kept for backward compatibility - delegates to the new function
-async function markAllAbsent(date) {
-  await markAllAbsentForDate(date);
-}
-
 async function selectAllStatus(status) {
   if (!DOM.attendanceDate) return;
   const date = DOM.attendanceDate.value;
-  if (!date) { showToast('الرجاء اختيار التاريخ أولاً', 'error'); return; }
+  if (!date) { showToast('الرجاء اختيار التاريخ اولاً', 'error'); return; }
 
   const activeGirls = state.girls.filter(g => !g.isDeleted);
   const batchRecords = [];
 
   for (const g of activeGirls) {
     const key = `${g.id}_${date}_عام`;
+    const existing = state.attendanceData[key];
     const rec = {
       id: key,
       girlId: g.id,
@@ -1633,7 +1596,8 @@ async function selectAllStatus(status) {
       day: state.selectedDay,
       activity: 'عام',
       status: status,
-      notes: state.attendanceData[key]?.notes || '',
+      notes: existing?.notes || '',
+      rating: existing?.rating || 0,
       updatedAt: Date.now(),
       updatedBy: state.currentUser?.displayName || 'مستخدم',
       updatedByEmail: state.currentUser?.email || ''
@@ -1658,7 +1622,7 @@ async function selectAllStatus(status) {
     await OfflineQueue.add({ type: 'saveBatchAttendance', data: { records: batchRecords } });
   }
 
-  await logHistory('تسجيل حضور', `${status === 'حاضر' ? 'تحديد الكل حاضر' : 'تحديد الكل غائب'} - ${state.selectedActivity} - ${date}`);
+  await logHistory('تسجيل حضور', `${status === 'حاضر' ? 'تحديد الكل حاضر' : 'تحديد الكل غائب'} - عام - ${date}`);
   showToast(status === 'حاضر' ? 'تم تحديد الكل حاضر' : 'تم تحديد الكل غائب', 'success');
   renderAttendanceList();
   if (state.currentPage === 'home') renderHome();
@@ -1691,7 +1655,7 @@ function renderAttendanceList() {
   }
 
   if (!activeGirls.length) {
-    el.innerHTML = '<div class="empty-state">لا توجد موظفين مسجلة<br><small>أضف موظفين أولاً من صفحة الموظفين</small></div>';
+    el.innerHTML = '<div class="empty-state">لا توجد موظفين مسجلين<br><small>اضف موظفين اولاً من صفحة الموظفين</small></div>';
     if (DOM.presentCount) DOM.presentCount.textContent = 0;
     if (DOM.absentCount) DOM.absentCount.textContent = 0;
     if (DOM.totalCount) DOM.totalCount.textContent = 0;
@@ -1716,6 +1680,7 @@ function renderAttendanceList() {
       <div class="att-info">
         <span class="att-name">${esc(g.name)}</span>
         ${rec?.notes ? `<span class="att-note">${esc(rec.notes)}</span>` : ''}
+        ${rec?.rating > 0 ? `<span class="att-note">التقييم: ${'★'.repeat(rec.rating)}${'☆'.repeat(5 - rec.rating)}</span>` : ''}
       </div>
       <span class="att-status-text ${statusClass}">${statusText}</span>
       <button class="att-delete-btn" data-att-key="${esc(key)}" title="حذف السجل">&#10060;</button>`;
@@ -1738,7 +1703,7 @@ async function deleteAttendanceRecord(key) {
 
   showConfirm({
     icon: '&#9888;', title: 'حذف سجل الحضور',
-    msg: `هل أنت متأكد من حذف سجل ${esc(gName)} ليوم ${esc(rec.date)}؟`,
+    msg: `هل انت متأكد من حذف سجل ${esc(gName)} ليوم ${esc(rec.date)}؟`,
     okLabel: 'حذف',
     onOk: async () => {
       try {
@@ -1762,27 +1727,41 @@ async function deleteAttendanceRecord(key) {
         if (state.currentPage === 'calendar') renderCalendar();
       } catch (err) {
         console.error('Delete attendance error:', err);
-        showToast('حدث خطأ أثناء الحذف', 'error');
+        showToast('حدث خطأ اثناء الحذف', 'error');
       }
     }
   });
 }
 
-
-
+// ============================================================
+// ATTENDANCE ENTRY MODAL (with rating)
+// ============================================================
 function openAttendanceEntry(girlId, girlName, date) {
   state.currentAttendanceGirlId = girlId;
+  state.currentAttendanceRating = 0;
   if (DOM.attendanceModalTitle) DOM.attendanceModalTitle.textContent = `${date}`;
   if (DOM.modalGirlName) DOM.modalGirlName.textContent = girlName;
   if (DOM.attendanceNotes) DOM.attendanceNotes.value = '';
+
+  // Reset stars
+  $$('#starsInput .star').forEach(s => s.classList.remove('selected'));
 
   const key = `${girlId}_${date}_عام`;
   const existing = state.attendanceData[key];
   if (existing) {
     $$('.attend-btn').forEach(b => b.classList.toggle('selected', b.dataset.status === existing.status));
     if (DOM.attendanceNotes) DOM.attendanceNotes.value = existing.notes || '';
+    // Set rating
+    if (existing.rating > 0) {
+      state.currentAttendanceRating = existing.rating;
+      $$('#starsInput .star').forEach(s => {
+        s.classList.toggle('selected', parseInt(s.dataset.rating) <= existing.rating);
+      });
+    }
+    if (DOM.ratingSection) DOM.ratingSection.classList.toggle('hidden', existing.status !== 'حاضر');
   } else {
     $$('.attend-btn').forEach(b => b.classList.remove('selected'));
+    if (DOM.ratingSection) DOM.ratingSection.classList.remove('hidden');
   }
   openModal('attendanceModal');
 }
@@ -1795,14 +1774,23 @@ $$('.attend-btn').forEach(b => {
   });
 });
 
-
+// Star rating handlers
+$$('#starsInput .star').forEach(star => {
+  star.addEventListener('click', () => {
+    const rating = parseInt(star.dataset.rating);
+    state.currentAttendanceRating = rating;
+    $$('#starsInput .star').forEach(s => {
+      s.classList.toggle('selected', parseInt(s.dataset.rating) <= rating);
+    });
+  });
+});
 
 if (DOM.saveAttendanceEntry) {
   DOM.saveAttendanceEntry.addEventListener('click', async () => {
     if (!DOM.attendanceDate) return;
     const date = DOM.attendanceDate.value;
     const statusBtn = document.querySelector('.attend-btn.selected');
-    if (!statusBtn) { showToast('الرجاء تحديد الحضور أو الغياب', 'error'); return; }
+    if (!statusBtn) { showToast('الرجاء تحديد الحضور او الغياب', 'error'); return; }
 
     const key = `${state.currentAttendanceGirlId}_${date}_عام`;
     const rec = {
@@ -1813,6 +1801,7 @@ if (DOM.saveAttendanceEntry) {
       activity: 'عام',
       status: statusBtn.dataset.status,
       notes: DOM.attendanceNotes ? DOM.attendanceNotes.value.trim() : '',
+      rating: statusBtn.dataset.status === 'حاضر' ? (state.currentAttendanceRating || 0) : 0,
       updatedAt: Date.now(),
       updatedBy: state.currentUser?.displayName || 'مستخدم',
       updatedByEmail: state.currentUser?.email || ''
@@ -1833,7 +1822,7 @@ if (DOM.saveAttendanceEntry) {
     }
 
     const gName = state.girls.find(g => g.id === state.currentAttendanceGirlId)?.name || '';
-    await logHistory('تسجيل حضور', `${gName} - ${state.selectedActivity} - ${date} - ${rec.status}`);
+    await logHistory('تسجيل حضور', `${gName} - عام - ${date} - ${rec.status}`);
     closeModal('attendanceModal');
     showToast('تم الحفظ', 'success');
     renderAttendanceList();
@@ -1845,7 +1834,7 @@ if (DOM.saveAttendanceEntry) {
 }
 
 // ============================================================
-// CALENDAR PAGE — Fixed duplicate todayStr
+// CALENDAR PAGE — Fixed
 // ============================================================
 function renderCalendar() {
   const year = state.calendarDate.getFullYear();
@@ -1857,7 +1846,7 @@ function renderCalendar() {
   const todayStr = DateUtil.toStr();
 
   let html = '<div class="cal-weekdays">';
-  ['أح', 'إث', 'ثل', 'أر', 'خم', 'جم', 'سب'].forEach(d => html += `<div class="cal-wday">${d}</div>`);
+  ['اح', 'اث', 'ثل', 'ار', 'خم', 'جم', 'سب'].forEach(d => html += `<div class="cal-wday">${d}</div>`);
   html += '</div><div class="cal-days">';
   for (let i = 0; i < firstDay; i++) html += '<div class="cal-day empty"></div>';
   for (let d = 1; d <= daysInMonth; d++) {
@@ -1936,12 +1925,10 @@ if (DOM.calNext) {
   });
 }
 
-
-
 // ============================================================
 // ACTIVITY DETAIL MODAL
 // ============================================================
-function openActivityDetailModal(activity, period, gradeFilter = '', customDate) {
+function openActivityDetailModal(activity, period, gradeFilter, customDate) {
   const { start, end } = getPeriodBounds(period, customDate);
   let activeGirls = state.girls.filter(g => !g.isDeleted);
   if (gradeFilter) activeGirls = activeGirls.filter(g => g.grade === gradeFilter);
@@ -2021,7 +2008,7 @@ function renderActivityDetailTab() {
       <div class="detail-girl-avatar">${esc(girl.name[0])}</div>
       <div class="detail-girl-info">
         <div class="detail-girl-name">${esc(girl.name)}</div>
-        <div class="detail-girl-grade">${esc(girl.grade)} \u00B7 ${presentCount} حضور \u00B7 ${absentCount} غياب \u00B7 ${attendanceRate}% نسبة \u00B7 آخر: ${esc(latestRecord.date)}</div>
+        <div class="detail-girl-grade">${esc(girl.grade)} \u00B7 ${presentCount} حضور \u00B7 ${absentCount} غياب \u00B7 ${attendanceRate}% نسبة \u00B7 اخر: ${esc(latestRecord.date)}</div>
       </div>
       <div class="detail-status-icon ${isPresentTab ? 'present' : 'absent'}">
         ${isPresentTab ? '&#10003;' : '&#10007;'}
@@ -2056,8 +2043,6 @@ if (DOM.closeActivityDetailModal) {
   DOM.closeActivityDetailModal.addEventListener('click', () => closeModal('activityDetailModal'));
 }
 
-
-
 // ============================================================
 // STATS PAGE
 // ============================================================
@@ -2087,9 +2072,9 @@ function renderStats() {
   if (DOM.bigStatsGrid) {
     DOM.bigStatsGrid.innerHTML = `
       <div class="big-stat-card"><div class="big-num">${activeGirls.length}</div><div>الموظفين</div></div>
-      <div class="big-stat-card"><div class="big-num">${totalSessions}</div><div>أيام عمل مسجلة</div></div>
-      <div class="big-stat-card green-card"><div class="big-num">${presents}</div><div>إجمالي الحضور</div></div>
-      <div class="big-stat-card red-card"><div class="big-num">${absents}</div><div>إجمالي الغياب</div></div>`;
+      <div class="big-stat-card"><div class="big-num">${totalSessions}</div><div>ايام عمل مسجلة</div></div>
+      <div class="big-stat-card green-card"><div class="big-num">${presents}</div><div>اجمالي الحضور</div></div>
+      <div class="big-stat-card red-card"><div class="big-num">${absents}</div><div>اجمالي الغياب</div></div>`;
   }
 
   const absenceByGirl = {};
@@ -2152,10 +2137,8 @@ if (DOM.timeFilterTabs) {
   });
 }
 
-
-
 // ============================================================
-// HISTORY PAGE — FIXED: Loads from Firestore + IndexedDB
+// HISTORY PAGE — Fixed
 // ============================================================
 async function renderHistory(append = false) {
   const el = DOM.historyList;
@@ -2170,7 +2153,7 @@ async function renderHistory(append = false) {
     const allLogs = [];
     const seenIds = new Set();
 
-    // 1. Try Firestore first (online) — get ALL history documents
+    // 1. Try Firestore first (online)
     if (firebaseReady && window._fb) {
       try {
         const snap = await window._fb.getDocs(
@@ -2186,7 +2169,7 @@ async function renderHistory(append = false) {
       } catch (e) { console.warn('Firestore history load failed:', e); }
     }
 
-    // 2. Also load from IndexedDB (covers offline entries + duplicates)
+    // 2. Also load from IndexedDB (covers offline entries)
     try {
       const idbLogs = await IDB.getAll('history');
       idbLogs.forEach(log => {
@@ -2236,11 +2219,11 @@ if (DOM.clearHistoryBtn) {
   DOM.clearHistoryBtn.addEventListener('click', () => {
     showConfirm({
       icon: '&#9888;', title: 'مسح السجل التاريخي',
-      msg: 'هل أنت متأكد؟ سيتم مسح كل السجلات نهائياً ولا يمكن التراجع.',
+      msg: 'هل انت متأكد؟ سيتم مسح كل السجلات نهائياً ولا يمكن التراجع.',
       okLabel: 'مسح الكل',
       onOk: async () => {
         // Clear IndexedDB
-        if (state.idb) await IDB.clear('history');
+        try { await IDB.clear('history'); } catch (e) { console.warn('IDB clear failed:', e); }
         state.historyAllLogs = [];
         // Clear Firestore
         if (firebaseReady && window._fb) {
@@ -2263,7 +2246,7 @@ if (DOM.clearHistoryBtn) {
 }
 
 function getHistoryIcon(action) {
-  if (action.includes('إضافة')) return '&#10133;';
+  if (action.includes('اضافة')) return '&#10133;';
   if (action.includes('تعديل')) return '&#9999;';
   if (action.includes('حذف')) return '&#10060;';
   if (action.includes('حضور')) return '&#128203;';
@@ -2293,13 +2276,13 @@ async function logHistory(action, detail, customTimestamp) {
 }
 
 // ============================================================
-// EXPORT PAGE — FIXED: Day/Month selection with ✓ and X symbols
+// EXPORT PAGE — Fixed
 // ============================================================
 function renderExport() {
   if (DOM.exportMonth && !DOM.exportMonth.value) DOM.exportMonth.value = DateUtil.toStr();
 }
 
-// Excel export — FIXED: Daily report = ✓/✗ per activity, Monthly report = numeric counts
+// Excel export
 if (DOM.exportCSV) {
   DOM.exportCSV.addEventListener('click', () => {
     if (!XLSX) { showToast('مكتبة Excel غير محملة، حاول تحديث الصفحة', 'error'); return; }
@@ -2330,17 +2313,13 @@ if (DOM.exportCSV) {
     const wb = XLSX.utils.book_new();
 
     if (exportMode === 'month') {
-      // ============================================================
-      // MONTHLY REPORT: NUMBERS per activity + totals
-      // الاسم | السنة | إنتاج | إدارة | جودة | صيانة | إجمالي الحضور | إجمالي الغياب
-      // ============================================================
       const monthName = DateUtil.formatMonth(exportDate.substring(0, 7));
       const wsData = [];
       wsData.push(['تقرير حضور شهر ' + monthName]);
       wsData.push([]);
       wsData.push(['عدد الموظفين', activeGirlIds.size]);
       wsData.push([]);
-      wsData.push(['الاسم', 'إجمالي الحضور', 'إجمالي الغياب']);
+      wsData.push(['الاسم', 'اجمالي الحضور', 'اجمالي الغياب']);
 
       const grouped = {};
       exportAtt.forEach(a => {
@@ -2377,7 +2356,7 @@ if (DOM.exportCSV) {
       exportAtt.forEach(a => {
         const g = state.girls.find(x => x.id === a.girlId);
         const dayName = DAY_NAMES[new Date(a.date + 'T00:00:00').getDay()] || '';
-        detailData.push([a.date, dayName, g?.name || '', a.status === 'حاضر' ? '✓' : '✗', a.notes || '']);
+        detailData.push([a.date, dayName, g?.name || '', a.status === 'حاضر' ? '\u2713' : '\u2717', a.notes || '']);
       });
 
       const wsDetail = XLSX.utils.aoa_to_sheet(detailData);
@@ -2386,10 +2365,6 @@ if (DOM.exportCSV) {
       XLSX.utils.book_append_sheet(wb, wsDetail, 'تفاصيل يومية');
 
     } else {
-      // ============================================================
-      // DAILY REPORT: ✓/✗ per activity for each girl
-      // الاسم | السنة | إنتاج | إدارة | جودة | صيانة
-      // ============================================================
       const wsData = [];
       wsData.push([reportTitle]);
       wsData.push([]);
@@ -2399,11 +2374,10 @@ if (DOM.exportCSV) {
       activeGirls.forEach(g => {
         const key = `${g.id}_${exportDate}_عام`;
         const rec = state.attendanceData[key];
-        const status = rec ? (rec.status === 'حاضر' ? '✓' : '✗') : '—';
+        const status = rec ? (rec.status === 'حاضر' ? '\u2713' : '\u2717') : '—';
         wsData.push([g.name, status]);
       });
 
-      // Summary
       const totalPresent = exportAtt.filter(a => a.status === 'حاضر').length;
       const totalAbsent = exportAtt.filter(a => a.status === 'غائب').length;
       wsData.push([]);
@@ -2427,7 +2401,9 @@ if (DOM.exportCSV) {
     URL.revokeObjectURL(url);
     showToast(exportMode === 'month' ? 'تم تصدير ملف Excel للشهر' : 'تم تصدير ملف Excel لليوم', 'success');
   });
-}if (DOM.exportJSON) {
+}
+
+if (DOM.exportJSON) {
   DOM.exportJSON.addEventListener('click', () => {
     const exportDate = DOM.exportMonth.value || DateUtil.toStr();
     const exportStart = exportDate.substring(0, 7) + '-01';
@@ -2475,9 +2451,6 @@ if (DOM.exportPrint) {
     let html;
 
     if (exportMode === 'month') {
-      // ============================================================
-      // MONTHLY PRINT REPORT: Numbers per activity + totals
-      // ============================================================
       const monthName = DateUtil.formatMonth(exportDate.substring(0, 7));
 
       const grouped = {};
@@ -2517,24 +2490,21 @@ if (DOM.exportPrint) {
         @media print{body{padding:10px}}
         </style></head><body>
         <h1>تقرير حضور شهر ${monthName}</h1>
-        <p style="color:#6b7a99;font-size:14px">الفترة: من ${exportStart} إلى ${exportEnd}</p>
+        <p style="color:#6b7a99;font-size:14px">الفترة: من ${exportStart} الى ${exportEnd}</p>
         <div class="summary">
           <div class="sum-box"><b>${activeGirls.length}</b><br><span>عدد الموظفين</span></div>
-          <div class="sum-box"><b>${totalPresent}</b><br><span>إجمالي الحضور</span></div>
-          <div class="sum-box"><b>${totalAbsent}</b><br><span>إجمالي الغياب</span></div>
+          <div class="sum-box"><b>${totalPresent}</b><br><span>اجمالي الحضور</span></div>
+          <div class="sum-box"><b>${totalAbsent}</b><br><span>اجمالي الغياب</span></div>
           <div class="sum-box"><b>${sortedGirls.length}</b><br><span>موظفين مشاركين</span></div>
         </div>
         <table>
-          <tr><th>#</th><th>الاسم</th><th>إجمالي الحضور</th><th>إجمالي الغياب</th></tr>
+          <tr><th>#</th><th>الاسم</th><th>اجمالي الحضور</th><th>اجمالي الغياب</th></tr>
           ${rows}
         </table>
         <div class="footer">تاريخ التصدير: ${new Date().toLocaleDateString('ar-EG')} | نظام الحضور والغياب</div>
         </body></html>`;
 
     } else {
-      // ============================================================
-      // DAILY PRINT REPORT: ✓/✗ per activity for each girl
-      // ============================================================
       const dayName = DAY_NAMES[new Date(exportDate + 'T00:00:00').getDay()] || '';
 
       const sortedGirls = state.girls.filter(g => !g.isDeleted).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
@@ -2542,8 +2512,8 @@ if (DOM.exportPrint) {
       const rows = sortedGirls.map((g, i) => {
         const key = `${g.id}_${exportDate}_عام`;
         const rec = state.attendanceData[key];
-        const statusCell = rec 
-          ? (rec.status === 'حاضر' ? '<td style="color:green;font-weight:700;font-size:16px">✓</td>' : '<td style="color:red;font-weight:700;font-size:16px">✗</td>')
+        const statusCell = rec
+          ? (rec.status === 'حاضر' ? '<td style="color:green;font-weight:700;font-size:16px">\u2713</td>' : '<td style="color:red;font-weight:700;font-size:16px">\u2717</td>')
           : '<td style="color:#ccc">—</td>';
         return `<tr>
           <td>${i + 1}</td>
@@ -2583,4 +2553,242 @@ if (DOM.exportPrint) {
     }
 
     const w = window.open('', '_blank');
-    if (!w) { showToast('تم حجب النافذة م
+    if (!w) { showToast('تم حجب النافذة من المتصفح', 'error'); return; }
+    w.document.write(html);
+    w.document.close();
+    w.print();
+  });
+}
+
+function downloadFile(filename, content, mimeType) {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+// ============================================================
+// MODAL HELPERS
+// ============================================================
+function openModal(id) {
+  if (!DOM[id]) return;
+  DOM[id].classList.add('show');
+  document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+  if (!DOM[id]) return;
+  DOM[id].classList.remove('show');
+  const anyOpen = document.querySelector('.modal-overlay.show');
+  if (!anyOpen) document.body.style.overflow = '';
+}
+
+// ============================================================
+// CONFIRM MODAL
+// ============================================================
+let confirmResolve = null;
+
+function showConfirm({ icon = '&#9888;', title, msg, okLabel = 'تأكيد', okClass = '', onOk }) {
+  if (DOM.confirmIcon) DOM.confirmIcon.innerHTML = icon;
+  if (DOM.confirmTitle) DOM.confirmTitle.textContent = title;
+  if (DOM.confirmMsg) DOM.confirmMsg.textContent = msg;
+  const okBtn = DOM.confirmOk;
+  if (okBtn) {
+    okBtn.textContent = okLabel;
+    okBtn.className = 'confirm-ok';
+    if (okClass) okBtn.classList.add(...okClass.split(' ').filter(Boolean));
+  }
+  confirmResolve = onOk;
+  if (DOM.confirmOverlay) DOM.confirmOverlay.classList.add('show');
+}
+
+if (DOM.confirmOk) {
+  DOM.confirmOk.addEventListener('click', async () => {
+    if (DOM.confirmOverlay) DOM.confirmOverlay.classList.remove('show');
+    if (confirmResolve) {
+      const fn = confirmResolve;
+      confirmResolve = null;
+      try { await fn(); } catch (e) { console.error('Confirm ok error:', e); }
+    }
+  });
+}
+
+if (DOM.confirmCancel) {
+  DOM.confirmCancel.addEventListener('click', () => {
+    if (DOM.confirmOverlay) DOM.confirmOverlay.classList.remove('show');
+    confirmResolve = null;
+  });
+}
+
+if (DOM.confirmOverlay) {
+  DOM.confirmOverlay.addEventListener('click', e => {
+    if (e.target === DOM.confirmOverlay) {
+      DOM.confirmOverlay.classList.remove('show');
+      confirmResolve = null;
+    }
+  });
+}
+
+if (DOM.closeGirlModal) DOM.closeGirlModal.addEventListener('click', () => closeModal('girlModal'));
+if (DOM.cancelGirlModal) DOM.cancelGirlModal.addEventListener('click', () => closeModal('girlModal'));
+if (DOM.closeAttendanceModal) DOM.closeAttendanceModal.addEventListener('click', () => closeModal('attendanceModal'));
+if (DOM.cancelAttendanceModal) DOM.cancelAttendanceModal.addEventListener('click', () => closeModal('attendanceModal'));
+
+$$('.modal-overlay').forEach(overlay => overlay.addEventListener('click', e => {
+  if (e.target === overlay) closeModal(overlay.id);
+}));
+
+// ============================================================
+// EVENT DELEGATION
+// ============================================================
+function setupDelegation() {
+  if (DOM.needsFollowup) {
+    DOM.needsFollowup.addEventListener('click', e => {
+      const item = e.target.closest('.followup-item');
+      if (item) showGirlProfile(item.dataset.girlId);
+    });
+  }
+
+  if (DOM.girlsList) {
+    DOM.girlsList.addEventListener('click', e => {
+      const editBtn = e.target.closest('.edit-btn');
+      if (editBtn) { e.stopPropagation(); editGirl(editBtn.dataset.girlId); return; }
+      const card = e.target.closest('.girl-card');
+      if (card) showGirlProfile(card.dataset.girlId);
+    });
+  }
+
+  if (DOM.searchResults) {
+    DOM.searchResults.addEventListener('click', e => {
+      const item = e.target.closest('.search-item');
+      if (item && item.dataset.girlId) showGirlProfile(item.dataset.girlId);
+    });
+  }
+
+  if (DOM.attendanceList) {
+    DOM.attendanceList.addEventListener('click', e => {
+      const delBtn = e.target.closest('.att-delete-btn');
+      if (delBtn) {
+        e.stopPropagation();
+        e.preventDefault();
+        deleteAttendanceRecord(delBtn.dataset.attKey);
+        return;
+      }
+      if (state.isLongPress) {
+        state.isLongPress = false;
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+      const item = e.target.closest('.att-item');
+      if (item) {
+        const g = state.girls.find(x => x.id === item.dataset.girlId);
+        if (g && DOM.attendanceDate) toggleAttendanceStatus(g.id, g.name, DOM.attendanceDate.value);
+      }
+    });
+
+    DOM.attendanceList.addEventListener('mousedown', e => {
+      const item = e.target.closest('.att-item');
+      if (!item) return;
+      state.isLongPress = false;
+      state.longPressTimer = setTimeout(() => {
+        state.isLongPress = true;
+        const g = state.girls.find(x => x.id === item.dataset.girlId);
+        if (g && DOM.attendanceDate) openAttendanceEntry(g.id, g.name, DOM.attendanceDate.value);
+      }, 500);
+    });
+    DOM.attendanceList.addEventListener('mouseup', () => {
+      if (state.longPressTimer) { clearTimeout(state.longPressTimer); state.longPressTimer = null; }
+      setTimeout(() => { state.isLongPress = false; }, 100);
+    });
+    DOM.attendanceList.addEventListener('mouseleave', () => {
+      if (state.longPressTimer) { clearTimeout(state.longPressTimer); state.longPressTimer = null; }
+    });
+
+    DOM.attendanceList.addEventListener('touchstart', e => {
+      const item = e.target.closest('.att-item');
+      if (!item) return;
+      state.isLongPress = false;
+      state.longPressTimer = setTimeout(() => {
+        state.isLongPress = true;
+        const g = state.girls.find(x => x.id === item.dataset.girlId);
+        if (g && DOM.attendanceDate) openAttendanceEntry(g.id, g.name, DOM.attendanceDate.value);
+      }, 500);
+    }, { passive: true });
+    DOM.attendanceList.addEventListener('touchend', () => {
+      if (state.longPressTimer) { clearTimeout(state.longPressTimer); state.longPressTimer = null; }
+      setTimeout(() => { state.isLongPress = false; }, 100);
+    });
+    DOM.attendanceList.addEventListener('touchcancel', () => {
+      if (state.longPressTimer) { clearTimeout(state.longPressTimer); state.longPressTimer = null; }
+    });
+  }
+
+  if (DOM.calendarGrid) {
+    DOM.calendarGrid.addEventListener('click', e => {
+      const day = e.target.closest('.cal-day');
+      if (day && !day.classList.contains('empty')) showDayDetail(day.dataset.date);
+    });
+  }
+}
+
+// Girls search
+const girlsSearchInput = document.getElementById('girlsSearch');
+if (girlsSearchInput) {
+  let girlsSearchTimer = null;
+  girlsSearchInput.addEventListener('input', () => {
+    clearTimeout(girlsSearchTimer);
+    girlsSearchTimer = setTimeout(() => {
+      state.girlsSearchQuery = girlsSearchInput.value;
+      renderGirlsList();
+    }, 250);
+  });
+}
+
+setupDelegation();
+
+// ============================================================
+// BOOTSTRAP — Fixed with proper error handling
+// ============================================================
+async function bootstrap() {
+  initDarkMode();
+
+  // Initialize IndexedDB first (always, even without Firebase)
+  try {
+    await IDB.init();
+    state.idb = true;
+  } catch (e) {
+    console.warn('IndexedDB init failed:', e);
+    state.idb = false;
+  }
+
+  // Initialize offline sync queue
+  try {
+    await OfflineQueue.init();
+  } catch (e) {
+    console.warn('OfflineQueue init failed:', e);
+  }
+
+  // Initialize timestamp toggle UI
+  initTimestampToggle();
+
+  // Set initial online status
+  updateOnlineStatus();
+
+  // Initialize Firebase modules
+  const modulesReady = await initModules();
+
+  if (modulesReady) {
+    await initAuth();
+    // Try syncing any pending operations from previous offline sessions
+    OfflineQueue.trySync();
+  } else {
+    console.error('Firebase failed to load');
+    hideSplash();
+    showLogin();
+  }
+}
+
+bootstrap();
