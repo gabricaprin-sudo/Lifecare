@@ -67,7 +67,8 @@ async function initModules() {
     firebaseReady = true;
 
     // Firebase fonksiyonlarini global kapsama ekle
-    window._fb = { collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where, signOut };
+    // === Duzeltilen Satir: onAuthStateChanged eklendi ===
+    window._fb = { collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where, signOut, onAuthStateChanged };
 
     // XLSX kutuphanesini yuklemeyi dene
     try {
