@@ -67,7 +67,6 @@ async function initModules() {
     firebaseReady = true;
 
     // Firebase fonksiyonlarini global kapsama ekle
-    // === Duzeltilen Satir: onAuthStateChanged eklendi ===
     window._fb = { collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where, signOut, onAuthStateChanged };
 
     // XLSX kutuphanesini yuklemeyi dene
@@ -317,12 +316,10 @@ const state = {
 };
 
 const HISTORY_PAGE_SIZE = 30;
-// Calisma gunleri: Cumartesi'den Persembe'ye (6 gun). Cuma tatil.
 const SERVICE_DAYS = { 'Cumartesi': true, 'Pazar': true, 'Pazartesi': true, 'Sali': true, 'Carsamba': true, 'Persembe': true };
 const SERVICE_DAY_NUMBERS = [0, 1, 2, 3, 4, 6];
 const DAY_NAMES = ['Pazar','Pazartesi','Sali','Carsamba','Persembe','Cuma','Cumartesi'];
 
-// JS gun numarasini (0=Pazar..6=Cumartesi) Turkce calisma gunu adina esle
 const JS_DAY_TO_TURKISH = {
   0: 'Pazar',
   1: 'Pazartesi',
@@ -653,31 +650,68 @@ async function initAuth() {
   }
 }
 
+// ============================================================
+// GOOGLE SIGN IN - Duzeltilmis ve Guclendirilmis
+// ============================================================
 if (DOM.googleSignIn) {
   DOM.googleSignIn.addEventListener('click', async () => {
-    if (!firebaseReady || !window._fb) {
-      showToast('Internet baglantisi yok - cevrimdisi modu kullanin', 'warning');
+    // 1. Temel kontroller
+    if (!firebaseReady || !window._fb || !auth || !provider) {
+      console.error('Firebase hazir degil:', { firebaseReady, auth: !!auth, provider: !!provider });
+      showToast('Sistem hazir degil. Lutfen sayfayi yenileyin.', 'error');
       return;
     }
+
     DOM.googleSignIn.classList.add('is-loading');
+    
     try {
+      // Once popup dene
       const { signInWithPopup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
       await signInWithPopup(auth, provider);
+      // Basarili - loading kalkacak (onAuthStateChanged handle eder)
     } catch (e) {
-      DOM.googleSignIn.classList.remove('is-loading');
       console.error('Giris hatasi:', e.code, e.message);
-      const errorMessages = {
-        'auth/popup-blocked': 'Acilir pencere engellendi. Lutfen acilir pencerelere izin verin.',
-        'auth/popup-closed-by-user': 'Giris penceresi kapatildi.',
-        'auth/cancelled-popup-request': 'Giris istegi iptal edildi.',
-        'auth/network-request-failed': 'Ag baglantisi basarisiz. Internet baglantinizi kontrol edin.',
-        'auth/invalid-api-key': 'API anahtari gecersiz.',
-        'auth/operation-not-supported-in-this-environment': 'Bu ortamda islem desteklenmiyor.'
-      };
-      const userMsg = errorMessages[e.code] || ('Giris basarisiz: ' + (e.message || e.code));
-      showToast(userMsg, 'error');
+      
+      // Popup engellenirse veya iframe'deyse redirect dene
+      if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') {
+        try {
+          showToast('Popup acilamadi. Yonlendirme ile giris yapiliyor...', 'warning');
+          const { signInWithRedirect } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+          await signInWithRedirect(auth, provider);
+          return; // Sayfa yonlendirilecek, loading kalabilir
+        } catch (redirectErr) {
+          console.error('Redirect hatasi:', redirectErr);
+          showToast('Giris yontemi calismiyor. Lutfen tarayici ayarlarini kontrol edin.', 'error');
+        }
+      } else {
+        const errorMessages = {
+          'auth/popup-closed-by-user': 'Giris penceresi kapatildi.',
+          'auth/cancelled-popup-request': 'Giris istegi iptal edildi.',
+          'auth/network-request-failed': 'Ag baglantisi basarisiz. Internet baglantinizi kontrol edin.',
+          'auth/invalid-api-key': 'API anahtari gecersiz.',
+          'auth/unauthorized-domain': 'Bu domain icin giris yetkisi yok. Firebase Console\'dan yetkilendirin.'
+        };
+        const userMsg = errorMessages[e.code] || ('Giris basarisiz: ' + (e.message || e.code));
+        showToast(userMsg, 'error');
+      }
+      
+      DOM.googleSignIn.classList.remove('is-loading');
     }
   });
+}
+
+// Redirect sonucunu kontrol et (sayfa geri dondugunde)
+async function checkRedirectResult() {
+  if (!firebaseReady || !auth) return;
+  try {
+    const { getRedirectResult } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+    const result = await getRedirectResult(auth);
+    if (result && result.user) {
+      console.log('Redirect ile giris basarili:', result.user.email);
+    }
+  } catch (e) {
+    console.error('Redirect sonucu hatasi:', e);
+  }
 }
 
 if (DOM.signOutBtn) {
@@ -902,7 +936,6 @@ function renderHome() {
   const absentGirlIds = new Set();
   const todayRecordsByGirl = {};
 
-  // Bugun icin tum yoklama kayitlarini topla
   Object.values(state.attendanceData).forEach(a => {
     if (a.date !== dateStr) return;
     if (!activeGirlIds.has(a.girlId)) return;
@@ -910,7 +943,6 @@ function renderHome() {
     todayRecordsByGirl[a.girlId].push(a);
   });
 
-  // Her calisanin bugunku durumunu kontrol et
   activeGirls.forEach(g => {
     const records = todayRecordsByGirl[g.id];
     if (records && records.length > 0) {
@@ -918,7 +950,6 @@ function renderHome() {
       if (hasAnyPresent) presentGirlIds.add(g.id);
       else absentGirlIds.add(g.id);
     } else if (isService) {
-      // Calisma gunu ve kayit yok = otomatik yok say
       absentGirlIds.add(g.id);
     }
   });
@@ -926,7 +957,6 @@ function renderHome() {
   if (DOM.statPresentToday) DOM.statPresentToday.textContent = presentGirlIds.size;
   if (DOM.statAbsentToday) DOM.statAbsentToday.textContent = absentGirlIds.size;
 
-  // === Bu Ay En Cok Gelenler ===
   const presentDatesByGirl = {};
   activeGirls.forEach(g => presentDatesByGirl[g.id] = new Set());
   Object.values(state.attendanceData).forEach(a => {
@@ -957,7 +987,6 @@ function renderHome() {
     }
   }
 
-  // === Takip Gerektirenler (ardisik devamsizlik) ===
   if (DOM.needsFollowup) {
     const followupGirls = [];
     activeGirls.forEach(g => {
@@ -1728,7 +1757,6 @@ function openAttendanceEntry(girlId, girlName, date) {
   if (DOM.modalGirlName) DOM.modalGirlName.textContent = girlName;
   if (DOM.attendanceNotes) DOM.attendanceNotes.value = '';
 
-  // Yildizlari sifirla
   $$('#starsInput .star').forEach(s => s.classList.remove('selected'));
 
   const key = `${girlId}_${date}_Genel`;
@@ -1758,7 +1786,6 @@ $$('.attend-btn').forEach(b => {
   });
 });
 
-// Yildiz degerlendirme
 $$('#starsInput .star').forEach(star => {
   star.addEventListener('click', () => {
     const rating = parseInt(star.dataset.rating);
@@ -1847,7 +1874,6 @@ function renderCalendar() {
   html += '</div>';
   if (DOM.calendarGrid) DOM.calendarGrid.innerHTML = html;
 
-  // Bu ay gorunumundeyse bugunun detaylarini otomatik goster
   const now = new Date();
   if (year === now.getFullYear() && month === now.getMonth()) {
     currentDayDetailDate = todayStr;
@@ -2136,7 +2162,6 @@ async function renderHistory(append = false) {
     const allLogs = [];
     const seenIds = new Set();
 
-    // 1. Once Firestore'dan al (cevrimici)
     if (firebaseReady && window._fb) {
       try {
         const snap = await window._fb.getDocs(
@@ -2152,7 +2177,6 @@ async function renderHistory(append = false) {
       } catch (e) { console.warn('Firestore gecmis yukleme hatasi:', e); }
     }
 
-    // 2. IndexedDB'den de al (cevrimdisi kayitlari da kapsar)
     try {
       const idbLogs = await IDB.getAll('history');
       idbLogs.forEach(log => {
@@ -2163,10 +2187,8 @@ async function renderHistory(append = false) {
       });
     } catch (e) { console.warn('IDB gecmis yukleme hatasi:', e); }
 
-    // En yeniden en eskiye sirala
     allLogs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-    // Filtrele
     state.historyAllLogs = filter ? allLogs.filter(l => l.action && l.action.includes(filter)) : allLogs;
   }
 
@@ -2243,9 +2265,7 @@ async function logHistory(action, detail, customTimestamp) {
     byEmail: state.currentUser?.email || '',
     timestamp: ts
   };
-  // Once IndexedDB'ye kaydet (her zaman calisir, cevrimdisi dahil)
   try { await IDB.add('history', log); } catch (e) { console.warn('IDB gecmis kaydetme hatasi:', e); }
-  // Firestore'a kaydet veya senkronizasyon kuyruguna ekle
   if (navigator.onLine && firebaseReady && window._fb) {
     try { await window._fb.setDoc(window._fb.doc(db, 'history', log.id), log); }
     catch (e) {
@@ -2263,7 +2283,6 @@ function renderExport() {
   if (DOM.exportMonth && !DOM.exportMonth.value) DOM.exportMonth.value = DateUtil.toStr();
 }
 
-// Excel aktarimi
 if (DOM.exportCSV) {
   DOM.exportCSV.addEventListener('click', () => {
     if (!XLSX) { showToast('Excel kutuphanesi yuklenmedi, sayfayi yenileyin', 'error'); return; }
@@ -2323,7 +2342,6 @@ if (DOM.exportCSV) {
       ws['!dir'] = 'ltr';
       XLSX.utils.book_append_sheet(wb, ws, 'Ay Ozeti');
 
-      // === Sayfa 2: Gunluk Detayli Kayitlar ===
       exportAtt.sort((a, b) => {
         if (a.date !== b.date) return a.date.localeCompare(b.date);
         return (a.activity || '').localeCompare(b.activity || '', 'tr');
@@ -2715,7 +2733,6 @@ function setupDelegation() {
   }
 }
 
-// Calisan arama
 const girlsSearchInput = document.getElementById('girlsSearch');
 if (girlsSearchInput) {
   let girlsSearchTimer = null;
@@ -2736,7 +2753,6 @@ setupDelegation();
 async function bootstrap() {
   initDarkMode();
 
-  // IndexedDB'yi ilk olarak baslat (Firebase olmadan bile)
   try {
     await IDB.init();
     state.idb = true;
@@ -2745,25 +2761,22 @@ async function bootstrap() {
     state.idb = false;
   }
 
-  // Cevrimdisi senkronizasyon kuyrugunu baslat
   try {
     await OfflineQueue.init();
   } catch (e) {
     console.warn('OfflineQueue baslatma hatasi:', e);
   }
 
-  // Zaman dilimi arayuzunu baslat
   initTimestampToggle();
 
-  // Cevrimici durumunu ayarla
   updateOnlineStatus();
 
-  // Firebase modullerini baslat
   const modulesReady = await initModules();
 
   if (modulesReady) {
     await initAuth();
-    // Onceki cevrimdisi oturumlardan bekleyen islemleri senkronize etmeyi dene
+    // Redirect sonucunu kontrol et (sayfa yonlendirme sonrasi geri donus)
+    await checkRedirectResult();
     OfflineQueue.trySync();
   } else {
     console.error('Firebase yuklenemedi');
