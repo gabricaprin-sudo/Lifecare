@@ -12,127 +12,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <base target="_blank">
+  <!-- Firebase compat scripts for better mobile/reliable loading -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
 <base target="_blank">
 </head>
 <body>
-  <!-- DEBUG BAR -->
-  <div id="debugBar" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#ff0000;color:#fff;padding:8px;font-size:12px;font-family:monospace;text-align:center;">
-    Waiting...
-  </div>
-
-  <!-- Firebase Compat (global) -->
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-
-  <!-- Main Logic -->
-  <script>
-    (function(){
-      var bar = document.getElementById('debugBar');
-      function show(msg) {
-        if(bar) bar.textContent = msg;
-        console.log('[APP]', msg);
-      }
-
-      // IMMEDIATE alert to prove script is running
-      alert('SCRIPT RUNNING');
-      show('Script loaded');
-
-      // Firebase config
-      var config = {
-        apiKey: "AIzaSyDjEZsPpbHq7r50pe400NUo7cvZANYeSac",
-        authDomain: "deimrpilek.firebaseapp.com",
-        projectId: "deimrpilek",
-        storageBucket: "deimrpilek.firebasestorage.app",
-        messagingSenderId: "716821036614",
-        appId: "1:716821036614:web:779ff5cb9209c10379d447"
-      };
-
-      // Wait for Firebase to be ready
-      function initFirebase() {
-        try {
-          if (typeof firebase === 'undefined') {
-            show('Firebase not loaded yet');
-            alert('Firebase not loaded - check internet');
-            return false;
-          }
-          firebase.initializeApp(config);
-          show('Firebase OK');
-          alert('Firebase OK');
-          return true;
-        } catch(e) {
-          show('Firebase error: ' + e.message);
-          alert('Firebase error: ' + e.message);
-          return false;
-        }
-      }
-
-      // Try immediately, and also on window.load
-      var fbReady = initFirebase();
-      if (!fbReady) {
-        window.addEventListener('load', function() {
-          fbReady = initFirebase();
-        });
-      }
-
-      // Global handler for the button
-      window.handleGoogleSignInInline = function(e) {
-        alert('BUTTON CLICKED');
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (!fbReady) {
-          alert('Firebase not ready - wait a moment and retry');
-          return;
-        }
-
-        try {
-          var auth = firebase.auth();
-          var provider = new firebase.auth.GoogleAuthProvider();
-          auth.signInWithPopup(provider)
-            .then(function(result) {
-              alert('Login SUCCESS');
-              show('Login success');
-
-              // Transition to main app
-              var loginScreen = document.getElementById('loginScreen');
-              var mainApp = document.getElementById('mainApp');
-              if (loginScreen) loginScreen.classList.add('hidden');
-              if (mainApp) mainApp.classList.remove('hidden');
-
-              // Update user avatar if available
-              var user = result.user;
-              if (user) {
-                var avatar = document.getElementById('userAvatar');
-                var drawerAvatar = document.getElementById('drawerAvatar');
-                var drawerName = document.getElementById('drawerUserName');
-                var drawerEmail = document.getElementById('drawerUserEmail');
-                var initial = user.displayName ? user.displayName[0] : 'K';
-                if (avatar) avatar.textContent = initial;
-                if (drawerAvatar) drawerAvatar.textContent = initial;
-                if (drawerName) drawerName.textContent = user.displayName || 'Kullanici';
-                if (drawerEmail) drawerEmail.textContent = user.email || '';
-              }
-
-              // Trigger app.js init if it loaded
-              if (window._triggerAppInit) {
-                window._triggerAppInit(user);
-              }
-            })
-            .catch(function(err) {
-              alert('ERROR: ' + (err.code || err.message));
-              show('Error: ' + (err.code || err.message));
-            });
-        } catch(err) {
-          alert('EXCEPTION: ' + err.message);
-          show('Exception: ' + err.message);
-        }
-      };
-
-      show('Handler ready');
-      alert('Handler ready');
-    })();
-  </script>
-
   <div id="app">
     <!-- Splash Screen -->
     <div id="splash" class="splash">
@@ -205,7 +91,8 @@
           <div class="login-divider"><span></span></div>
           <div class="login-welcome">Personel Yoklama Takip Sistemi</div>
 
-          <button id="googleSignIn" class="btn-google" onclick="handleGoogleSignInInline(event); return false;">
+          <!-- Inline onclick for guaranteed click handling -->
+          <button id="googleSignIn" class="btn-google" onclick="googleSignInHandler()">
             <svg class="google-logo" width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
             <span class="btn-spinner"></span>
             <span class="btn-text">Google ile Giris Yap</span>
@@ -219,6 +106,7 @@
       <!-- Header -->
       <header class="app-header">
         <div class="header-left">
+          <!-- Inline onclick for guaranteed menu open -->
           <button class="menu-btn" id="menuBtn" aria-label="Menu" onclick="openDrawer()">&#9776;</button>
           <div class="header-titles">
             <h1 id="pageTitle">Ana Sayfa</h1>
@@ -252,10 +140,10 @@
           <li><a href="#" data-page="history" class="menu-item" onclick="navigateTo('history'); return false;"><span>&#128220;</span> Gecmis</a></li>
           <li><a href="#" data-page="export" class="menu-item" onclick="navigateTo('export'); return false;"><span>&#128228;</span> Disari Aktar</a></li>
           <li class="drawer-divider"></li>
-          <li><a href="#" id="signOutBtn" class="menu-item sign-out"><span>&#128682;</span> Cikis Yap</a></li>
+          <li><a href="#" id="signOutBtn" class="menu-item sign-out" onclick="signOutHandler(); return false;"><span>&#128682;</span> Cikis Yap</a></li>
         </ul>
         <!-- Dark Mode Toggle -->
-        <div class="dark-mode-toggle" id="darkModeToggle">
+        <div class="dark-mode-toggle" id="darkModeToggle" onclick="darkModeHandler()">
           <span>&#127769;</span> Koyu Mod
           <div class="dark-toggle-switch" id="darkToggleSwitch"></div>
         </div>
@@ -308,16 +196,16 @@
         <!-- ATTENDANCE PAGE -->
         <div id="page-attendance" class="page">
           <div class="day-selector">
-            <button class="day-btn" data-day="Cumartesi">Cmt</button>
-            <button class="day-btn" data-day="Pazar">Paz</button>
-            <button class="day-btn" data-day="Pazartesi">Pzt</button>
-            <button class="day-btn" data-day="Sali">Sal</button>
-            <button class="day-btn" data-day="Carsamba">Crs</button>
-            <button class="day-btn" data-day="Persembe">Prs</button>
+            <button class="day-btn" data-day="Cumartesi" onclick="setActiveDay('Cumartesi'); renderAttendancePage();">Cmt</button>
+            <button class="day-btn" data-day="Pazar" onclick="setActiveDay('Pazar'); renderAttendancePage();">Paz</button>
+            <button class="day-btn" data-day="Pazartesi" onclick="setActiveDay('Pazartesi'); renderAttendancePage();">Pzt</button>
+            <button class="day-btn" data-day="Sali" onclick="setActiveDay('Sali'); renderAttendancePage();">Sal</button>
+            <button class="day-btn" data-day="Carsamba" onclick="setActiveDay('Carsamba'); renderAttendancePage();">Crs</button>
+            <button class="day-btn" data-day="Persembe" onclick="setActiveDay('Persembe'); renderAttendancePage();">Prs</button>
           </div>
           <div class="date-input-wrap">
             <label for="attendanceDate">Tarih:</label>
-            <input type="date" id="attendanceDate" class="date-input">
+            <input type="date" id="attendanceDate" class="date-input" onchange="state.attendancePageInitialized=false; renderAttendancePage();">
           </div>
 
           <!-- Attendance Search Bar -->
@@ -331,8 +219,9 @@
             <span class="summ-item gray-text"><span id="totalCount">0</span> Toplam</span>
           </div>
           <div class="quick-actions" id="quickActions">
-            <button class="quick-action-btn all-present" id="selectAllPresent">&#10003; Tumu Var</button>
-            <button class="quick-action-btn all-absent" id="selectAllAbsent">&#10007; Tumu Yok</button>
+            <!-- Inline onclick for guaranteed select-all -->
+            <button class="quick-action-btn all-present" id="selectAllPresent" onclick="selectAllStatus('Var')">&#10003; Tumu Var</button>
+            <button class="quick-action-btn all-absent" id="selectAllAbsent" onclick="selectAllStatus('Yok')">&#10007; Tumu Yok</button>
           </div>
           <div class="att-toggle-hint" id="attToggleHint">&#128161; Gecmek icin tikla &middot; Detay icin uzun bas &middot; Degerlendirme icin yildiza tikla</div>
           <div id="attendanceList" class="attendance-list"></div>
@@ -345,7 +234,8 @@
             <input type="text" id="girlsSearch" class="search-bar" placeholder="&#128269; Duzenleme veya silme icin calisan ara..." autocomplete="off">
           </div>
           <div class="girls-filter-row">
-            <button class="btn-add-girl" id="addGirlBtn">+ Ekle</button>
+            <!-- Inline onclick for guaranteed add girl -->
+            <button class="btn-add-girl" id="addGirlBtn" onclick="addGirlHandler()">+ Ekle</button>
           </div>
           <div id="girlsList" class="girls-list"></div>
         </div>
@@ -353,9 +243,9 @@
         <!-- CALENDAR PAGE -->
         <div id="page-calendar" class="page">
           <div class="calendar-nav">
-            <button class="cal-nav-btn" id="calPrev" aria-label="Onceki Ay">&#9664;</button>
+            <button class="cal-nav-btn" id="calPrev" aria-label="Onceki Ay" onclick="calendarNavHandler('prev')">&#9664;</button>
             <span id="calMonthYear" class="cal-month-title">---</span>
-            <button class="cal-nav-btn" id="calNext" aria-label="Sonraki Ay">&#9654;</button>
+            <button class="cal-nav-btn" id="calNext" aria-label="Sonraki Ay" onclick="calendarNavHandler('next')">&#9654;</button>
           </div>
           <div class="calendar-grid" id="calendarGrid"></div>
           <div id="dayDetail" class="day-detail"></div>
@@ -366,13 +256,13 @@
           <!-- Date picker for month + day specific stats -->
           <div class="stats-month-selector">
             <label for="statsMonth">Tarih:</label>
-            <input type="date" id="statsMonth" class="month-input">
+            <input type="date" id="statsMonth" class="month-input" onchange="renderStats()">
           </div>
           <div class="time-filter-tabs" id="timeFilterTabs">
-            <button class="time-filter-tab" data-period="all">Tum</button>
-            <button class="time-filter-tab active" data-period="today">Bugun</button>
-            <button class="time-filter-tab" data-period="month">Bu Ay</button>
-            <button class="time-filter-tab" data-period="year">Bu Yil</button>
+            <button class="time-filter-tab" data-period="all" onclick="setStatsTimeFilter('all')">Tum</button>
+            <button class="time-filter-tab active" data-period="today" onclick="setStatsTimeFilter('today')">Bugun</button>
+            <button class="time-filter-tab" data-period="month" onclick="setStatsTimeFilter('month')">Bu Ay</button>
+            <button class="time-filter-tab" data-period="year" onclick="setStatsTimeFilter('year')">Bu Yil</button>
           </div>
 
           <div class="big-stats-grid" id="bigStatsGrid"></div>
@@ -386,20 +276,20 @@
         <!-- HISTORY PAGE -->
         <div id="page-history" class="page">
           <div class="history-controls">
-            <select id="historyFilter" class="filter-select">
+            <select id="historyFilter" class="filter-select" onchange="renderHistory(false)">
               <option value="">Tum Islemler</option>
               <option value="Ekleme">&#10133; Calisan Ekleme</option>
               <option value="Duzenleme">&#9999; Calisan Duzenleme</option>
               <option value="Silme">&#10060; Calisan Silme</option>
               <option value="Yoklama">&#128203; Yoklama Kayit</option>
             </select>
-            <button id="clearHistoryBtn" class="btn-clear-history">&#10060; Gecmisi Temizle</button>
+            <button id="clearHistoryBtn" class="btn-clear-history" onclick="clearHistoryHandler()">&#10060; Gecmisi Temizle</button>
           </div>
           <div id="historyList" class="history-list">
             <div class="empty-state">Yukleniyor...</div>
           </div>
           <div id="loadMoreHistory" class="load-more-wrap hidden">
-            <button id="loadMoreHistoryBtn" class="btn-load-more">&#9660; Daha Fazla Yukle</button>
+            <button id="loadMoreHistoryBtn" class="btn-load-more" onclick="loadMoreHistoryHandler()">&#9660; Daha Fazla Yukle</button>
           </div>
         </div>
 
@@ -432,15 +322,15 @@
               <span>&#128161;</span> "Belirli Gun" = Gunluk rapor (&#10003; Var / &#10007; Yok) &nbsp;|&nbsp; "Tam Ay" = Istatistik raporu
             </div>
             <div class="export-btns">
-              <button class="export-btn csv" id="exportCSV">
+              <button class="export-btn csv" id="exportCSV" onclick="exportCSVHandler()">
                 <span>&#128196;</span>
                 <div><b>Excel'e Aktar</b><small>Var = &#10003; | Yok = X</small></div>
               </button>
-              <button class="export-btn json" id="exportJSON">
+              <button class="export-btn json" id="exportJSON" onclick="exportJSONHandler()">
                 <span>&#128190;</span>
                 <div><b>JSON'a Aktar</b><small>Tum veriler</small></div>
               </button>
-              <button class="export-btn print" id="exportPrint">
+              <button class="export-btn print" id="exportPrint" onclick="exportPrintHandler()">
                 <span>&#128424;</span>
                 <div><b>Yazdir</b><small>Yazdirilabilir rapor</small></div>
               </button>
@@ -465,7 +355,8 @@
       <div class="modal">
         <div class="modal-header">
           <h3 id="girlModalTitle">Calisan Ekle</h3>
-          <button class="modal-close" id="closeGirlModal" aria-label="Kapat">&#10005;</button>
+          <!-- Inline onclick for guaranteed close -->
+          <button class="modal-close" id="closeGirlModal" aria-label="Kapat" onclick="closeModal('girlModal')">&#10005;</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
@@ -507,9 +398,12 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn-danger hidden" id="deleteGirlBtn">&#128465; Sil</button>
-          <button class="btn-cancel" id="cancelGirlModal">&#10005; Iptal</button>
-          <button class="btn-primary" id="saveGirlBtn">&#128190; Kaydet</button>
+          <!-- Inline onclick for guaranteed delete -->
+          <button class="btn-danger hidden" id="deleteGirlBtn" onclick="deleteGirlHandler()">&#128465; Sil</button>
+          <!-- Inline onclick for guaranteed cancel -->
+          <button class="btn-cancel" id="cancelGirlModal" onclick="closeModal('girlModal')">&#10005; Iptal</button>
+          <!-- Inline onclick for guaranteed save -->
+          <button class="btn-primary" id="saveGirlBtn" onclick="saveGirlHandler()">&#128190; Kaydet</button>
         </div>
       </div>
     </div>
@@ -521,8 +415,10 @@
         <div class="confirm-title" id="confirmTitle">Onayla</div>
         <div class="confirm-msg" id="confirmMsg"></div>
         <div class="confirm-actions">
-          <button class="confirm-cancel" id="confirmCancel">&#10005; Iptal</button>
-          <button class="confirm-ok" id="confirmOk">&#10003; Onayla</button>
+          <!-- Inline onclick for guaranteed cancel -->
+          <button class="confirm-cancel" id="confirmCancel" onclick="confirmCancelHandler()">&#10005; Iptal</button>
+          <!-- Inline onclick for guaranteed ok -->
+          <button class="confirm-ok" id="confirmOk" onclick="confirmOkHandler()">&#10003; Onayla</button>
         </div>
       </div>
     </div>
@@ -532,12 +428,15 @@
       <div class="modal modal-large">
         <div class="modal-header">
           <h3 id="profileName">Calisan Profili</h3>
-          <button class="modal-close" id="closeProfileModal" aria-label="Kapat">&#10005;</button>
+          <!-- Inline onclick for guaranteed close -->
+          <button class="modal-close" id="closeProfileModal" aria-label="Kapat" onclick="closeModal('girlProfileModal')">&#10005;</button>
         </div>
         <div class="modal-body" id="profileBody"></div>
         <div class="modal-footer">
-          <button class="btn-share" id="shareProfileBtn">&#128239; Paylas</button>
-          <button class="btn-primary" id="editProfileBtn">&#9999; Duzenle</button>
+          <!-- Inline onclick for guaranteed share -->
+          <button class="btn-share" id="shareProfileBtn" onclick="shareProfileHandler()">&#128239; Paylas</button>
+          <!-- Inline onclick for guaranteed edit -->
+          <button class="btn-primary" id="editProfileBtn" onclick="editProfileHandler()">&#9999; Duzenle</button>
         </div>
       </div>
     </div>
@@ -547,24 +446,25 @@
       <div class="modal">
         <div class="modal-header">
           <h3 id="attendanceModalTitle">Yoklama Kaydi</h3>
-          <button class="modal-close" id="closeAttendanceModal" aria-label="Kapat">&#10005;</button>
+          <!-- Inline onclick for guaranteed close -->
+          <button class="modal-close" id="closeAttendanceModal" aria-label="Kapat" onclick="closeModal('attendanceModal')">&#10005;</button>
         </div>
         <div class="modal-body">
           <p class="modal-girl-name" id="modalGirlName"></p>
           <div class="attend-options">
-            <button class="attend-btn present" data-status="Var" type="button">&#10003; Var</button>
-            <button class="attend-btn absent" data-status="Yok" type="button">&#10007; Yok</button>
+            <button class="attend-btn present" data-status="Var" type="button" onclick="selectAttendStatus(this)">&#10003; Var</button>
+            <button class="attend-btn absent" data-status="Yok" type="button" onclick="selectAttendStatus(this)">&#10007; Yok</button>
           </div>
 
           <!-- Rating Section -->
           <div class="form-group rating-section" id="ratingSection">
             <label>Degerlendirme:</label>
             <div class="stars-input" id="starsInput">
-              <span class="star" data-rating="1">&#9733;</span>
-              <span class="star" data-rating="2">&#9733;</span>
-              <span class="star" data-rating="3">&#9733;</span>
-              <span class="star" data-rating="4">&#9733;</span>
-              <span class="star" data-rating="5">&#9733;</span>
+              <span class="star" data-rating="1" onclick="setStarRating(1)">&#9733;</span>
+              <span class="star" data-rating="2" onclick="setStarRating(2)">&#9733;</span>
+              <span class="star" data-rating="3" onclick="setStarRating(3)">&#9733;</span>
+              <span class="star" data-rating="4" onclick="setStarRating(4)">&#9733;</span>
+              <span class="star" data-rating="5" onclick="setStarRating(5)">&#9733;</span>
             </div>
           </div>
 
@@ -574,8 +474,10 @@
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn-cancel" id="cancelAttendanceModal">&#10005; Iptal</button>
-          <button class="btn-primary" id="saveAttendanceEntry">&#128190; Kaydet</button>
+          <!-- Inline onclick for guaranteed cancel -->
+          <button class="btn-cancel" id="cancelAttendanceModal" onclick="closeModal('attendanceModal')">&#10005; Iptal</button>
+          <!-- Inline onclick for guaranteed save -->
+          <button class="btn-primary" id="saveAttendanceEntry" onclick="saveAttendanceHandler()">&#128190; Kaydet</button>
         </div>
       </div>
     </div>
@@ -585,7 +487,8 @@
       <div class="modal modal-large">
         <div class="modal-header">
           <h3 id="activityDetailTitle">Aktivite Detayi</h3>
-          <button class="modal-close" id="closeActivityDetailModal" aria-label="Kapat">&#10005;</button>
+          <!-- Inline onclick for guaranteed close -->
+          <button class="modal-close" id="closeActivityDetailModal" aria-label="Kapat" onclick="closeModal('activityDetailModal')">&#10005;</button>
         </div>
         <div class="modal-body">
           <div class="detail-summary-bar" id="activityDetailSummary">
@@ -597,10 +500,10 @@
             <span class="summary-total" id="activityDetailTotal">0</span>
           </div>
           <div class="activity-detail-tabs" id="activityDetailTabs">
-            <button class="activity-detail-tab present-tab active" data-tab="present">
+            <button class="activity-detail-tab present-tab active" data-tab="present" onclick="switchActivityTab('present')">
               &#10003; Var <span class="tab-count" id="presentTabCount">0</span>
             </button>
-            <button class="activity-detail-tab absent-tab" data-tab="absent">
+            <button class="activity-detail-tab absent-tab" data-tab="absent" onclick="switchActivityTab('absent')">
               &#10007; Yok <span class="tab-count" id="absentTabCount">0</span>
             </button>
           </div>
@@ -613,6 +516,7 @@
     <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
   </div>
 
+  <!-- Script at end of body for guaranteed DOM readiness -->
   <script src="app.js"></script>
 </body>
 </html>
