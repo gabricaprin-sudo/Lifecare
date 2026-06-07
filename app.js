@@ -664,16 +664,11 @@ if (!DOM.googleSignIn) {
 }
 
 // ============================================================
-// KIMLIK DOGRULAMA - Google Sign-In (Delegation + Touch Support)
+// KIMLIK DOGRULAMA - Google Sign-In (Global + Fallback)
 // ============================================================
 
 async function handleGoogleSignIn(e) {
-  // Prevent double-firing on devices that trigger both touch and click
-  if (e.type === 'touchstart') {
-    e.preventDefault();
-  }
-
-  const btn = e.target.closest('#googleSignIn');
+  const btn = e.target.closest ? e.target.closest('#googleSignIn') : document.getElementById('googleSignIn');
   if (!btn) return;
 
   // Immediate feedback for mobile users
@@ -709,9 +704,25 @@ async function handleGoogleSignIn(e) {
   }
 }
 
-// Support both click (desktop) and touchstart (mobile) for instant response
-document.addEventListener('click', handleGoogleSignIn);
-document.addEventListener('touchstart', handleGoogleSignIn, { passive: false });
+// Global inline handler for HTML onclick attribute
+window.handleGoogleSignInInline = async function(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  await handleGoogleSignIn(e);
+};
+
+// Fallback: bind via addEventListener after page load
+window.addEventListener('load', () => {
+  const btn = document.getElementById('googleSignIn');
+  if (btn && !btn._bound) {
+    btn._bound = true;
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      await handleGoogleSignIn(e);
+    });
+  }
+});
 
 if (DOM.signOutBtn) {
   DOM.signOutBtn.addEventListener('click', async () => {
