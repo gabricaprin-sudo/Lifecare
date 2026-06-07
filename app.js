@@ -1,20 +1,20 @@
 // ============================================================
-// نظام الحضور والغياب — Offline Ready
+// Yoklama Sistemi - Personel Devam Takip (Cevrimdisi Destekli)
 // ============================================================
 
 // ============================================================
-// SAFETY: Global error handler + splash fallback
+// GUVENLIK: Global hata yakalayici + splash yedek
 // ============================================================
 window.addEventListener('error', (e) => {
-  console.error('Global error:', e.error || e.message);
+  console.error('Global hata:', e.error || e.message);
   hideSplashForced();
 });
 window.addEventListener('unhandledrejection', (e) => {
-  console.error('Unhandled rejection:', e.reason);
+  console.error('Yakalanmamis hata:', e.reason);
   hideSplashForced();
 });
 
-// Force hide splash after 6 seconds max — never get stuck
+// Splash'i en fazla 6 saniye sonra gizle - hicbir zaman takilmasin
 let splashForceHidden = false;
 function hideSplashForced() {
   if (splashForceHidden) return;
@@ -24,7 +24,7 @@ function hideSplashForced() {
     splash.classList.add('fade-out');
     setTimeout(() => splash.remove(), 500);
   }
-  // Show login screen as fallback if app isn't initialized
+  // Uygulama baslatilmadiysa giris ekranini goster
   setTimeout(() => {
     const loginScreen = document.getElementById('loginScreen');
     const mainApp = document.getElementById('mainApp');
@@ -37,17 +37,17 @@ function hideSplashForced() {
 setTimeout(hideSplashForced, 6000);
 
 // ============================================================
-// FIREBASE IMPORTS WITH FALLBACK
+// FIREBASE IMPORTLARI (yedekli)
 // ============================================================
 let firebaseApp, auth, db, provider;
 let firebaseReady = false;
 let XLSX = null;
 
-// Module imports with error handling
+// Hata yonetimi ile modul importlari
 async function initModules() {
   try {
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-    const { getAuth, GoogleAuthProvider, onAuthStateChanged, getRedirectResult, signInWithPopup, signInWithRedirect, signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+    const { getAuth, GoogleAuthProvider, onAuthStateChanged, signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
     const { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
 
     const firebaseConfig = {
@@ -66,27 +66,27 @@ async function initModules() {
     provider = new GoogleAuthProvider();
     firebaseReady = true;
 
-    // Attach Firebase functions to global scope for the app
-    window._fb = { collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where, signOut, onAuthStateChanged, getRedirectResult, signInWithPopup, signInWithRedirect };
+    // Firebase fonksiyonlarini global kapsama ekle
+    window._fb = { collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where, signOut };
 
-    // Try to load XLSX
+    // XLSX kutuphanesini yuklemeyi dene
     try {
       const xlsxMod = await import('https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs');
       XLSX = xlsxMod;
     } catch (xlsxErr) {
-      console.warn('XLSX library failed to load:', xlsxErr);
+      console.warn('XLSX kutuphanesi yuklenemedi:', xlsxErr);
     }
 
     return true;
   } catch (e) {
-    console.error('Firebase failed to initialize:', e);
+    console.error('Firebase baslatilamadi:', e);
     firebaseReady = false;
     return false;
   }
 }
 
 // ============================================================
-// DOM CACHE
+// DOM ONBELLEK
 // ============================================================
 const $ = (id) => document.getElementById(id);
 const $$ = (sel, root = document) => root.querySelectorAll(sel);
@@ -151,7 +151,7 @@ const DOM = {
 };
 
 // ============================================================
-// OFFLINE SYNC QUEUE
+// CEVRIMDISI SENKRON KUYRUK
 // ============================================================
 const OfflineQueue = {
   queue: [],
@@ -159,11 +159,10 @@ const OfflineQueue = {
   lastOnline: true,
 
   async init() {
-    // Load any previously queued items from IndexedDB
     try {
       const saved = await IDB.getAll('pendingSync');
       this.queue = saved || [];
-    } catch (e) { console.warn('OfflineQueue init failed:', e); }
+    } catch (e) { console.warn('OfflineQueue baslatma hatasi:', e); }
   },
 
   async add(operation) {
@@ -176,7 +175,7 @@ const OfflineQueue = {
     };
     this.queue.push(op);
     try { await IDB.add('pendingSync', op); } catch (e) {}
-    showToast('تم الحفظ محلياً — سيتم الرفع عند توفر الانترنت', 'warning');
+    showToast('Yerel olarak kaydedildi - internet dondugunde senkronize edilecek', 'warning');
     this.trySync();
   },
 
@@ -232,7 +231,7 @@ const OfflineQueue = {
         }
         await this.remove(op.id);
       } catch (e) {
-        console.error('Sync operation failed:', op.type, e);
+        console.error('Senkronizasyon hatasi:', op.type, e);
         op.retries++;
         if (op.retries >= 5) {
           await this.remove(op.id);
@@ -246,13 +245,13 @@ const OfflineQueue = {
     if (this.queue.length > 0) {
       setTimeout(() => this.trySync(), 30000);
     } else {
-      showToast('تمت مزامنة جميع البيانات مع السحابة', 'success');
+      showToast('Tum veriler bulut ile senkronize edildi', 'success');
     }
   }
 };
 
 // ============================================================
-// ONLINE / OFFLINE HANDLER
+// CEVRIMICI / CEVRIMDISI YONETIMI
 // ============================================================
 function updateOnlineStatus() {
   const isOnline = navigator.onLine;
@@ -268,10 +267,10 @@ function updateOnlineStatus() {
   }
 
   if (isOnline && !OfflineQueue.lastOnline) {
-    showToast('تم استعادة الاتصال — جاري المزامنة...', 'success');
+    showToast('Baglanti geri geldi - senkronize ediliyor...', 'success');
     OfflineQueue.trySync();
   } else if (!isOnline && OfflineQueue.lastOnline) {
-    showToast('انقطع الاتصال — العمليات سيُحفظ محلياً', 'warning');
+    showToast('Baglanti kesildi - islemler yerel olarak kaydedilecek', 'warning');
   }
 
   OfflineQueue.lastOnline = isOnline;
@@ -281,15 +280,15 @@ window.addEventListener('online', updateOnlineStatus);
 window.addEventListener('offline', updateOnlineStatus);
 
 // ============================================================
-// APP STATE
+// UYGULAMA DURUMU
 // ============================================================
 const state = {
   currentUser: null,
   girls: [],
   attendanceData: {},
   currentPage: 'home',
-  selectedDay: 'السبت',
-  selectedActivity: 'عام',
+  selectedDay: getCurrentServiceDay() || 'Cumartesi',
+  selectedActivity: 'Genel',
   currentAttendanceGirlId: null,
   currentAttendanceRating: 0,
   editingGirlId: null,
@@ -317,26 +316,26 @@ const state = {
 };
 
 const HISTORY_PAGE_SIZE = 30;
-// Work days: Saturday through Thursday (6 days). Friday is off.
-const SERVICE_DAYS = { 'السبت': true, 'الأحد': true, 'الاثنين': true, 'الثلاثاء': true, 'الأربعاء': true, 'الخميس': true };
+// Calisma gunleri: Cumartesi'den Persembe'ye (6 gun). Cuma tatil.
+const SERVICE_DAYS = { 'Cumartesi': true, 'Pazar': true, 'Pazartesi': true, 'Sali': true, 'Carsamba': true, 'Persembe': true };
 const SERVICE_DAY_NUMBERS = [0, 1, 2, 3, 4, 6];
-const DAY_NAMES = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
+const DAY_NAMES = ['Pazar','Pazartesi','Sali','Carsamba','Persembe','Cuma','Cumartesi'];
 
-// Map JS day number (0=Sun..6=Sat) to Arabic work day name
-const JS_DAY_TO_ARABIC = {
-  0: 'الأحد',
-  1: 'الاثنين',
-  2: 'الثلاثاء',
-  3: 'الأربعاء',
-  4: 'الخميس',
-  6: 'السبت'
+// JS gun numarasini (0=Pazar..6=Cumartesi) Turkce calisma gunu adina esle
+const JS_DAY_TO_TURKISH = {
+  0: 'Pazar',
+  1: 'Pazartesi',
+  2: 'Sali',
+  3: 'Carsamba',
+  4: 'Persembe',
+  6: 'Cumartesi'
 };
-const ACTIVITIES = ['عام'];
-const ACTIVITY_ICONS = { 'عام': '&#128204;' };
-const PERIOD_LABELS = { today: 'اليوم', month: 'هذا الشهر', year: 'هذه السنة', all: 'كل الفترات' };
+const ACTIVITIES = ['Genel'];
+const ACTIVITY_ICONS = { 'Genel': '&#128204;' };
+const PERIOD_LABELS = { today: 'Bugun', month: 'Bu Ay', year: 'Bu Yil', all: 'Tum Donemler' };
 
 // ============================================================
-// XSS PROTECTION
+// XSS KORUMA
 // ============================================================
 const esc = (() => {
   const div = document.createElement('div');
@@ -358,7 +357,7 @@ function xmlEsc(str = '') {
 }
 
 // ============================================================
-// DATE UTILITIES
+// TARIH YARDIMCILARI
 // ============================================================
 const DateUtil = {
   pad: (n) => String(n).padStart(2, '0'),
@@ -371,14 +370,14 @@ const DateUtil = {
   formatMonth(str) {
     if (!str) return '';
     const [y, m] = str.split('-').map(Number);
-    return new Date(y, m - 1, 1).toLocaleDateString('ar-EG', { year: 'numeric', month: 'long' });
+    return new Date(y, m - 1, 1).toLocaleDateString('tr-TR', { year: 'numeric', month: 'long' });
   },
   formatDateShort(d = new Date()) {
     return `${d.getDate()}/${d.getMonth() + 1}`;
   },
   dayName(d = new Date()) { return DAY_NAMES[d.getDay()]; },
   normalize(d) {
-    return { 'الأحد': 'الاحد', 'الاثنين': 'الاثنين', 'الثلاثاء': 'الثلاثاء', 'الأربعاء': 'الاربعاء', 'الخميس': 'الخميس', 'الجمعة': 'الجمعة', 'السبت': 'السبت' }[d] || d;
+    return { 'Pazar': 'Pazar', 'Pazartesi': 'Pazartesi', 'Sali': 'Sali', 'Carsamba': 'Carsamba', 'Persembe': 'Persembe', 'Cuma': 'Cuma', 'Cumartesi': 'Cumartesi' }[d] || d;
   }
 };
 
@@ -412,7 +411,7 @@ function getServiceDaysUpToDate(fromYear, fromMonth, toDate) {
 
 function hasConsecutiveAbsences(girlId, monthStr) {
   const absRecords = Object.values(state.attendanceData)
-    .filter(a => a.girlId === girlId && a.date?.startsWith(monthStr) && a.status === 'غائب');
+    .filter(a => a.girlId === girlId && a.date?.startsWith(monthStr) && a.status === 'Yok');
 
   if (absRecords.length < 2) return { hasConsecutive: false, count: absRecords.length, dates: [] };
 
@@ -430,7 +429,7 @@ function hasConsecutiveAbsences(girlId, monthStr) {
 }
 
 // ============================================================
-// UNIFIED STATS BOUNDS
+// BIRLESIK ISTATISTIK SINIRLARI
 // ============================================================
 function getStatsBounds() {
   const selectedDate = DOM.statsMonth && DOM.statsMonth.value ? DOM.statsMonth.value : DateUtil.toStr();
@@ -462,26 +461,23 @@ function getPeriodBounds(period, customDate) {
 }
 
 // ============================================================
-// ARABIC TEXT NORMALIZATION
+// METIN NORMALIZASYONU (Turkce icin)
 // ============================================================
-function normalizeArabic(str) {
+function normalizeTurkish(str) {
   if (!str) return '';
-  return str.replace(/[\u064B-\u065F\u0670\u0640]/g, '')
-    .replace(/[إأآا]/g, 'ا')
-    .replace(/ى/g, 'ي')
-    .replace(/ؤ/g, 'و')
-    .replace(/ئ/g, 'ي')
-    .replace(/ة/g, 'ه')
-    .toLowerCase();
+  return str.toLowerCase()
+    .replace(/İ/g, 'i').replace(/I/g, 'i')
+    .replace(/Ş/g, 's').replace(/ş/g, 's')
+    .replace(/Ç/g, 'c').replace(/ç/g, 'c')
+    .replace(/Ğ/g, 'g').replace(/ğ/g, 'g')
+    .replace(/Ü/g, 'u').replace(/ü/g, 'u')
+    .replace(/Ö/g, 'o').replace(/ö/g, 'o');
 }
 
 function normalizeName(name) {
   return name
     .trim()
     .replace(/\s+/g, ' ')
-    .replace(/[أإآ]/g, 'ا')
-    .replace(/ة/g, 'ه')
-    .replace(/ى/g, 'ي')
     .toLowerCase();
 }
 
@@ -490,7 +486,7 @@ function csvEscape(v) {
 }
 
 // ============================================================
-// INDEXEDDB — wrapper for offline history storage
+// INDEXEDDB - cevrimdisi gecmis depolama
 // ============================================================
 const IDB = {
   db: null,
@@ -561,7 +557,7 @@ const IDB = {
 };
 
 // ============================================================
-// DARK MODE
+// KOYU MOD
 // ============================================================
 function initDarkMode() {
   const saved = localStorage.getItem('darkMode');
@@ -587,7 +583,7 @@ if (DOM.darkModeToggle) {
 }
 
 // ============================================================
-// TOAST
+// TOAST (Bildirim)
 // ============================================================
 let toastTimeout;
 function showToast(msg, type = 'info') {
@@ -613,23 +609,21 @@ function hideSplash() {
 }
 
 // ============================================================
-// AUTH — Fixed with better error handling
+// KIMLIK DOGRULAMA
 // ============================================================
 let authListenersAttached = false;
 
 async function initAuth() {
   if (!firebaseReady || !window._fb) {
-    console.error('Firebase not available');
+    console.error('Firebase kullanilamiyor');
     hideSplash();
     showLogin();
     return;
   }
 
   try {
-    const { getRedirectResult, onAuthStateChanged } = window._fb;
-    try { await getRedirectResult(auth); } catch (e) { console.error('getRedirectResult error:', e); }
+    const { onAuthStateChanged } = window._fb;
 
-    // Prevent duplicate listeners
     if (authListenersAttached) return;
     authListenersAttached = true;
 
@@ -652,7 +646,7 @@ async function initAuth() {
       }
     });
   } catch (e) {
-    console.error('Auth init error:', e);
+    console.error('Kimlik dogrulama hatasi:', e);
     hideSplash();
     showLogin();
   }
@@ -661,35 +655,26 @@ async function initAuth() {
 if (DOM.googleSignIn) {
   DOM.googleSignIn.addEventListener('click', async () => {
     if (!firebaseReady || !window._fb) {
-      showToast('الانترنت غير متاح - استخدم وضع عدم الاتصال', 'warning');
+      showToast('Internet baglantisi yok - cevrimdisi modu kullanin', 'warning');
       return;
     }
     DOM.googleSignIn.classList.add('is-loading');
     try {
-      const { signInWithPopup } = window._fb;
+      const { signInWithPopup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
       await signInWithPopup(auth, provider);
     } catch (e) {
       DOM.googleSignIn.classList.remove('is-loading');
-      if (['auth/popup-blocked', 'auth/popup-closed-by-user', 'auth/cancelled-popup-request'].includes(e.code)) {
-        try {
-          const { signInWithRedirect } = window._fb;
-          await signInWithRedirect(auth, provider);
-        } catch (e2) {
-          showToast('فشل تسجيل الدخول: ' + e2.message, 'error');
-        }
-      } else {
-        console.error('Sign-in error:', e.code, e.message);
-        const errorMessages = {
-          'auth/popup-blocked': 'تم حجب النافذة المنبثقة. الرجاء السماح بالنوافذ المنبثقة.',
-          'auth/popup-closed-by-user': 'تم اغلاق نافذة تسجيل الدخول.',
-          'auth/cancelled-popup-request': 'تم الغاء طلب تسجيل الدخول.',
-          'auth/network-request-failed': 'فشل الاتصال بالشبكة. تحقق من اتصال الانترنت.',
-          'auth/invalid-api-key': 'مفتاح API غير صالح.',
-          'auth/operation-not-supported-in-this-environment': 'العملية غير مدعومة في هذا البي.'
-        };
-        const userMsg = errorMessages[e.code] || ('فشل تسجيل الدخول: ' + (e.message || e.code));
-        showToast(userMsg, 'error');
-      }
+      console.error('Giris hatasi:', e.code, e.message);
+      const errorMessages = {
+        'auth/popup-blocked': 'Acilir pencere engellendi. Lutfen acilir pencerelere izin verin.',
+        'auth/popup-closed-by-user': 'Giris penceresi kapatildi.',
+        'auth/cancelled-popup-request': 'Giris istegi iptal edildi.',
+        'auth/network-request-failed': 'Ag baglantisi basarisiz. Internet baglantinizi kontrol edin.',
+        'auth/invalid-api-key': 'API anahtari gecersiz.',
+        'auth/operation-not-supported-in-this-environment': 'Bu ortamda islem desteklenmiyor.'
+      };
+      const userMsg = errorMessages[e.code] || ('Giris basarisiz: ' + (e.message || e.code));
+      showToast(userMsg, 'error');
     }
   });
 }
@@ -706,8 +691,7 @@ if (DOM.signOutBtn) {
       const { signOut } = window._fb;
       await signOut(auth);
     } catch (e) {
-      console.error('Sign-out error:', e);
-      // Force logout locally even if Firebase fails
+      console.error('Cikis hatasi:', e);
       state.currentUser = null;
       state.appInitialized = false;
       showLogin();
@@ -724,10 +708,10 @@ function showApp(user) {
     card.classList.remove('animate-in');
     card.querySelectorAll('.animate-in').forEach(el => el.classList.remove('animate-in'));
   }
-  const initial = user && user.displayName ? user.displayName[0] : 'م';
+  const initial = user && user.displayName ? user.displayName[0] : 'K';
   if (DOM.userAvatar) DOM.userAvatar.textContent = initial;
   if (DOM.drawerAvatar) DOM.drawerAvatar.textContent = initial;
-  if (DOM.drawerUserName) DOM.drawerUserName.textContent = (user && user.displayName) || 'المستخدم';
+  if (DOM.drawerUserName) DOM.drawerUserName.textContent = (user && user.displayName) || 'Kullanici';
   if (DOM.drawerUserEmail) DOM.drawerUserEmail.textContent = (user && user.email) || '';
 }
 
@@ -739,7 +723,7 @@ function showLogin() {
       const card = document.getElementById('loginCard');
       if (card) {
         card.classList.add('animate-in');
-        card.querySelectorAll('.login-cross-icon, .login-church-name, .login-system-title, .login-divider, .login-welcome, .btn-google').forEach(el => {
+        card.querySelectorAll('.login-brand, .login-brand-icon, .login-brand-name, .login-motto, .login-divider, .login-divider span, .login-welcome, .btn-google').forEach(el => {
           el.classList.add('animate-in');
         });
       }
@@ -748,14 +732,13 @@ function showLogin() {
 }
 
 // ============================================================
-// FIREBASE LISTENERS
+// FIREBASE DINLEYICILER
 // ============================================================
 let dataListenersInitialized = false;
 
 async function loadData() {
   try {
     if (!firebaseReady || !window._fb) return;
-    // Prevent duplicate listeners on re-auth
     if (dataListenersInitialized) return;
     dataListenersInitialized = true;
 
@@ -774,7 +757,7 @@ async function loadData() {
           changed = true;
         }
       }
-      state.girls.sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+      state.girls.sort((a, b) => a.name.localeCompare(b.name, 'tr'));
       if (changed) scheduleRender();
     });
 
@@ -793,7 +776,7 @@ async function loadData() {
       if (changed) scheduleRender();
     });
 
-    // Listen to history collection and sync to IndexedDB
+    // Gecmis koleksiyonunu dinle ve IndexedDB ile senkronize et
     _onSnapshot(_query(_collection(db, 'history'), _orderBy('timestamp', 'desc')), async snap => {
       let changed = false;
       for (const change of snap.docChanges()) {
@@ -808,11 +791,11 @@ async function loadData() {
       }
       if (changed && state.currentPage === 'history') renderHistory(false);
     });
-  } catch (e) { console.error('Load error:', e); }
+  } catch (e) { console.error('Yukleme hatasi:', e); }
 }
 
 // ============================================================
-// RENDER ENGINE
+// RENDER MOTORU
 // ============================================================
 function scheduleRender() {
   clearTimeout(state.renderTimeout);
@@ -832,22 +815,22 @@ function renderPage() {
 }
 
 // ============================================================
-// NAVIGATION
+// NAVIGASYON
 // ============================================================
 const PAGE_TITLES = {
-  home: ['الرئيسية', ''],
-  attendance: ['الحضور اليومي', 'تسجيل وادارة الحضور'],
-  girls: ['الموظفين', 'قائمة الموظفين'],
-  calendar: ['التقويم الشهري', 'ايام العمل'],
-  stats: ['الاحصائيات', 'تحليلات وتقارير'],
-  history: ['السجل', 'سجل التعديلات'],
-  export: ['التصدير', 'تصدير البيانات']
+  home: ['Ana Sayfa', ''],
+  attendance: ['Gunluk Yoklama', 'Yoklama kaydet ve yonet'],
+  girls: ['Calisanlar', 'Calisan listesi'],
+  calendar: ['Aylik Takvim', 'Calisma gunleri'],
+  stats: ['Istatistikler', 'Analiz ve raporlar'],
+  history: ['Gecmis', 'Islem kayitlari'],
+  export: ['Disari Aktar', 'Verileri disari aktar']
 };
 
 function navigateTo(page) {
   const pageEl = $(`page-${page}`);
   if (!pageEl) {
-    console.warn(`Page element not found: page-${page}`);
+    console.warn(`Sayfa bulunamadi: page-${page}`);
     return;
   }
 
@@ -890,7 +873,7 @@ function closeDrawer() {
 }
 
 // ============================================================
-// HOME PAGE — Fixed
+// ANA SAYFA
 // ============================================================
 function renderHome() {
   const now = new Date();
@@ -899,12 +882,13 @@ function renderHome() {
   const monthStr = DateUtil.getMonthStr(now);
 
   if (DOM.todayDay) DOM.todayDay.textContent = `${DateUtil.formatDateShort(now)} ${dayName}`;
-  if (DOM.todayDate) DOM.todayDate.textContent = now.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long', day: 'numeric' });
+  if (DOM.todayDate) DOM.todayDate.textContent = now.toLocaleDateString('tr-TR', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  const isService = SERVICE_DAYS[dayName];
+  const normalized = DateUtil.normalize(dayName);
+  const isService = SERVICE_DAYS[normalized];
 
   if (DOM.todayServiceBadge) {
-    DOM.todayServiceBadge.textContent = isService ? 'يوم عمل \u2713' : 'لا يوجد عمل اليوم';
+    DOM.todayServiceBadge.textContent = isService ? 'Calisma gunu \u2713' : 'Bugun tatil';
     DOM.todayServiceBadge.classList.toggle('active', isService);
   }
 
@@ -917,7 +901,7 @@ function renderHome() {
   const absentGirlIds = new Set();
   const todayRecordsByGirl = {};
 
-  // Collect all attendance records for today
+  // Bugun icin tum yoklama kayitlarini topla
   Object.values(state.attendanceData).forEach(a => {
     if (a.date !== dateStr) return;
     if (!activeGirlIds.has(a.girlId)) return;
@@ -925,15 +909,15 @@ function renderHome() {
     todayRecordsByGirl[a.girlId].push(a);
   });
 
-  // Check each girl's status for today
+  // Her calisanin bugunku durumunu kontrol et
   activeGirls.forEach(g => {
     const records = todayRecordsByGirl[g.id];
     if (records && records.length > 0) {
-      const hasAnyPresent = records.some(r => r.status === 'حاضر');
+      const hasAnyPresent = records.some(r => r.status === 'Var');
       if (hasAnyPresent) presentGirlIds.add(g.id);
       else absentGirlIds.add(g.id);
     } else if (isService) {
-      // Service day with NO records = auto counted as absent
+      // Calisma gunu ve kayit yok = otomatik yok say
       absentGirlIds.add(g.id);
     }
   });
@@ -941,11 +925,11 @@ function renderHome() {
   if (DOM.statPresentToday) DOM.statPresentToday.textContent = presentGirlIds.size;
   if (DOM.statAbsentToday) DOM.statAbsentToday.textContent = absentGirlIds.size;
 
-  // === Top Attendees This Month ===
+  // === Bu Ay En Cok Gelenler ===
   const presentDatesByGirl = {};
   activeGirls.forEach(g => presentDatesByGirl[g.id] = new Set());
   Object.values(state.attendanceData).forEach(a => {
-    if (a.date?.startsWith(monthStr) && a.status === 'حاضر' && presentDatesByGirl[a.girlId] !== undefined) {
+    if (a.date?.startsWith(monthStr) && a.status === 'Var' && presentDatesByGirl[a.girlId] !== undefined) {
       presentDatesByGirl[a.girlId].add(a.date);
     }
   });
@@ -955,7 +939,7 @@ function renderHome() {
 
   if (DOM.topAttendees) {
     if (!sorted.length || !sorted[0][1]) {
-      DOM.topAttendees.innerHTML = '<div class="empty-state">لا توجد بيانات حضور هذا الشهر</div>';
+      DOM.topAttendees.innerHTML = '<div class="empty-state">Bu ay yoklama verisi yok</div>';
     } else {
       const frag = document.createDocumentFragment();
       sorted.forEach(([id, count], i) => {
@@ -964,7 +948,7 @@ function renderHome() {
         if (!g) return;
         const div = document.createElement('div');
         div.className = 'top-item';
-        div.innerHTML = `<span class="top-rank">${i + 1}</span><span class="top-name">${esc(g.name)}</span><span class="top-count">${count} يوم</span>`;
+        div.innerHTML = `<span class="top-rank">${i + 1}</span><span class="top-name">${esc(g.name)}</span><span class="top-count">${count} gun</span>`;
         frag.appendChild(div);
       });
       DOM.topAttendees.innerHTML = '';
@@ -972,7 +956,7 @@ function renderHome() {
     }
   }
 
-  // === Needs Followup (consecutive absences) ===
+  // === Takip Gerektirenler (ardisik devamsizlik) ===
   if (DOM.needsFollowup) {
     const followupGirls = [];
     activeGirls.forEach(g => {
@@ -983,14 +967,14 @@ function renderHome() {
     });
 
     if (followupGirls.length === 0) {
-      DOM.needsFollowup.innerHTML = '<div class="empty-state">لا يوجد موظفين يحتاجون متابعة هذا الشهر \u2705</div>';
+      DOM.needsFollowup.innerHTML = '<div class="empty-state">Bu ay takip gerektiren calisan yok \u2705</div>';
     } else {
       const frag = document.createDocumentFragment();
       followupGirls.forEach(({ girl, count }) => {
         const div = document.createElement('div');
         div.className = 'followup-item';
         div.dataset.girlId = girl.id;
-        div.innerHTML = `<span class="followup-name">${esc(girl.name)}</span><span class="followup-badge">${count} غيابات متتالية</span>`;
+        div.innerHTML = `<span class="followup-name">${esc(girl.name)}</span><span class="followup-badge">${count} ardisik devamsizlik</span>`;
         frag.appendChild(div);
       });
       DOM.needsFollowup.innerHTML = '';
@@ -1000,7 +984,7 @@ function renderHome() {
 }
 
 // ============================================================
-// SEARCH
+// ARAMA
 // ============================================================
 function debouncedSearch() {
   clearTimeout(state.searchDebounceTimer);
@@ -1009,11 +993,11 @@ function debouncedSearch() {
     const resultsEl = DOM.searchResults;
     if (!resultsEl) return;
     if (!q) { resultsEl.classList.remove('show'); resultsEl.innerHTML = ''; return; }
-    const qNorm = normalizeArabic(q);
-    const matches = state.girls.filter(g => !g.isDeleted && normalizeArabic(g.name).includes(qNorm));
+    const qNorm = normalizeTurkish(q);
+    const matches = state.girls.filter(g => !g.isDeleted && normalizeTurkish(g.name).includes(qNorm));
     resultsEl.innerHTML = matches.length
       ? matches.map(g => `<div class="search-item" data-girl-id="${esc(g.id)}"><span>${esc(g.name)}</span><span class="grade-badge">${esc(g.grade)}</span></div>`).join('')
-      : '<div class="search-item">لا توجد نتائج</div>';
+      : '<div class="search-item">Sonuc bulunamadi</div>';
     resultsEl.classList.add('show');
   }, 250);
 }
@@ -1021,15 +1005,15 @@ function debouncedSearch() {
 if (DOM.globalSearch) DOM.globalSearch.addEventListener('input', debouncedSearch);
 
 // ============================================================
-// GIRLS PAGE
+// CALISANLAR SAYFASI
 // ============================================================
 function renderGirlsList() {
   const searchQuery = (state.girlsSearchQuery || '').trim();
   let activeGirls = state.girls.filter(g => !g.isDeleted);
 
   if (searchQuery) {
-    const qNorm = normalizeArabic(searchQuery);
-    activeGirls = activeGirls.filter(g => normalizeArabic(g.name).includes(qNorm));
+    const qNorm = normalizeTurkish(searchQuery);
+    activeGirls = activeGirls.filter(g => normalizeTurkish(g.name).includes(qNorm));
   }
 
   const filtered = activeGirls;
@@ -1037,17 +1021,17 @@ function renderGirlsList() {
   if (!el) return;
 
   if (!filtered.length) {
-    el.innerHTML = '<div class="empty-state">لا توجد موظفين<br><small>اضغط + لاضافة موظف جديد</small></div>';
+    el.innerHTML = '<div class="empty-state">Calisan bulunmadi<br><small>Yeni calisan eklemek icin + tusuna basin</small></div>';
     return;
   }
   const monthStr = DateUtil.getMonthStr(new Date());
   const frag = document.createDocumentFragment();
   filtered.forEach(g => {
     const presents = Object.values(state.attendanceData).filter(a =>
-      a.girlId === g.id && a.date?.startsWith(monthStr) && a.status === 'حاضر'
+      a.girlId === g.id && a.date?.startsWith(monthStr) && a.status === 'Var'
     ).length;
     const absents = Object.values(state.attendanceData).filter(a =>
-      a.girlId === g.id && a.date?.startsWith(monthStr) && a.status === 'غائب'
+      a.girlId === g.id && a.date?.startsWith(monthStr) && a.status === 'Yok'
     ).length;
     const div = document.createElement('div');
     div.className = 'girl-card';
@@ -1060,7 +1044,7 @@ function renderGirlsList() {
         ${g.phone ? `<a href="tel:${esc(g.phone)}" class="girl-phone-link" data-phone="${esc(g.phone)}" onclick="event.stopPropagation();">${esc(g.phone)}</a>` : ''}
         <div class="girl-stats"><span class="green-text">&#10003;${presents}</span><span class="red-text">&#10007;${absents}</span></div>
       </div>
-      <button class="edit-btn" data-girl-id="${esc(g.id)}" aria-label="تعديل ${esc(g.name)}">&#9999;</button>`;
+      <button class="edit-btn" data-girl-id="${esc(g.id)}" aria-label="${esc(g.name)} duzenle">&#9999;</button>`;
     frag.appendChild(div);
   });
   el.innerHTML = '';
@@ -1070,7 +1054,7 @@ function renderGirlsList() {
 if (DOM.addGirlBtn) {
   DOM.addGirlBtn.addEventListener('click', () => {
     state.editingGirlId = null;
-    if (DOM.girlModalTitle) DOM.girlModalTitle.textContent = 'اضافة موظف';
+    if (DOM.girlModalTitle) DOM.girlModalTitle.textContent = 'Calisan Ekle';
     if (DOM.girlName) DOM.girlName.value = '';
     if (DOM.girlPhone) DOM.girlPhone.value = '';
     if (DOM.girlNotes) DOM.girlNotes.value = '';
@@ -1084,7 +1068,7 @@ function editGirl(id) {
   const g = state.girls.find(x => x.id === id);
   if (!g || g.isDeleted) return;
   state.editingGirlId = id;
-  if (DOM.girlModalTitle) DOM.girlModalTitle.textContent = 'تعديل بيانات الموظف';
+  if (DOM.girlModalTitle) DOM.girlModalTitle.textContent = 'Calisan Bilgilerini Duzenle';
   if (DOM.girlName) DOM.girlName.value = g.name;
   if (DOM.girlPhone) DOM.girlPhone.value = g.phone || '';
   if (DOM.girlNotes) DOM.girlNotes.value = g.notes || '';
@@ -1102,9 +1086,9 @@ if (DOM.deleteGirlBtn) {
     closeModal('girlModal');
 
     showConfirm({
-      icon: '&#9888;', title: 'حذف موظف',
-      msg: `هل انت متأكد من حذف "${esc(g.name)}"؟`,
-      okLabel: 'حذف',
+      icon: '&#9888;', title: 'Calisan Sil',
+      msg: `"${esc(g.name)}" silmek istediginizden emin misiniz?`,
+      okLabel: 'Sil',
       okClass: 'confirm-delete',
       onOk: async () => {
         if (state.deleteInProgress) return;
@@ -1141,20 +1125,20 @@ if (DOM.deleteGirlBtn) {
               await OfflineQueue.add({ type: 'deleteGirl', data: { id, ...deleteData } });
             }
           } catch (e) {
-            console.error('Delete girl Firestore error:', e);
+            console.error('Firestore silme hatasi:', e);
             await OfflineQueue.add({
               type: 'deleteGirl',
               data: { id, isDeleted: true, deletedAt: Date.now(), deletedBy: state.currentUser?.email || '', name: g.name, grade: g.grade }
             });
           }
 
-          await logHistory('حذف موظف', `${g.name} - ${g.grade}`);
-          showToast(`تم حذف ${g.name}`, 'success');
+          await logHistory('Silme', `${g.name} - ${g.grade}`);
+          showToast(`${g.name} silindi`, 'success');
           state.editingGirlId = null;
           scheduleRender();
         } catch (err) {
-          console.error('Delete error:', err);
-          showToast('حدث خطأ اثناء الحذف', 'error');
+          console.error('Silme hatasi:', err);
+          showToast('Silme sirasinda bir hata olustu', 'error');
         } finally {
           state.deleteInProgress = false;
         }
@@ -1164,7 +1148,7 @@ if (DOM.deleteGirlBtn) {
 }
 
 // ============================================================
-// TIMESTAMP TOGGLE LOGIC
+// ZAMAN DILIMI DEGISTIRME
 // ============================================================
 let timestampMode = 'auto';
 
@@ -1177,7 +1161,6 @@ function initTimestampToggle() {
 
   if (!toggle) return;
 
-  // Default: auto mode
   timestampMode = 'auto';
   updateTimestampUI();
 
@@ -1242,7 +1225,7 @@ function resetTimestampInputs() {
 }
 
 // ============================================================
-// SAVE GIRL — with offline support & custom timestamp
+// CALISAN KAYDET - cevrimdisi destekli ve ozel zaman damgasi
 // ============================================================
 if (DOM.saveGirlBtn) {
   DOM.saveGirlBtn.addEventListener('click', async () => {
@@ -1253,22 +1236,22 @@ if (DOM.saveGirlBtn) {
       const phone = DOM.girlPhone ? DOM.girlPhone.value.trim() : '';
       const notes = DOM.girlNotes ? DOM.girlNotes.value.trim() : '';
 
-      if (!name) { showToast('الرجاء ادخال اسم الموظف', 'error'); return; }
+      if (!name) { showToast('Lutfen calisan adini girin', 'error'); return; }
 
       const normalizedName = normalizeName(name);
       const existingGirl = state.girls.find(g =>
         normalizeName(g.name) === normalizedName && g.id !== state.editingGirlId && !g.isDeleted
       );
-      if (existingGirl) { showToast('هذا الموظف موجود بالفعل', 'error'); return; }
+      if (existingGirl) { showToast('Bu calisan zaten mevcut', 'error'); return; }
 
       const id = state.editingGirlId || 'girl_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
       const customTimestamp = getTimestampFromInputs();
 
       const girlData = {
-        id, name, phone, grade: 'موظف', notes,
+        id, name, phone, grade: 'Calisan', notes,
         createdAt: state.editingGirlId ? (state.girls.find(g => g.id === state.editingGirlId)?.createdAt || customTimestamp) : customTimestamp,
         updatedAt: customTimestamp,
-        updatedBy: state.currentUser?.displayName || 'مستخدم',
+        updatedBy: state.currentUser?.displayName || 'Kullanici',
         updatedByEmail: state.currentUser?.email || '',
         isDeleted: false
       };
@@ -1279,14 +1262,13 @@ if (DOM.saveGirlBtn) {
         state.girls.push(girlData);
       }
 
-      await logHistory(state.editingGirlId ? 'تعديل موظف' : 'اضافة موظف', `${name} - موظف`, customTimestamp);
+      await logHistory(state.editingGirlId ? 'Duzenleme' : 'Ekleme', `${name} - Calisan`, customTimestamp);
 
-      // Online: save directly. Offline: queue for sync.
       if (navigator.onLine && firebaseReady && window._fb) {
         try {
           await window._fb.setDoc(window._fb.doc(db, 'girls', id), girlData);
         } catch (e) {
-          console.error('Save girl Firestore error:', e);
+          console.error('Firestore kaydetme hatasi:', e);
           await OfflineQueue.add({ type: 'saveGirl', data: girlData });
         }
       } else {
@@ -1294,7 +1276,7 @@ if (DOM.saveGirlBtn) {
       }
 
       closeModal('girlModal');
-      showToast(state.editingGirlId ? 'تم تعديل البيانات' : 'تمت اضافة الموظف', 'success');
+      showToast(state.editingGirlId ? 'Bilgiler guncellendi' : 'Calisan eklendi', 'success');
       state.editingGirlId = null;
       resetTimestampInputs();
       renderPage();
@@ -1305,7 +1287,7 @@ if (DOM.saveGirlBtn) {
 }
 
 // ============================================================
-// GIRL PROFILE
+// CALISAN PROFILI
 // ============================================================
 function showGirlProfile(id) {
   const g = state.girls.find(x => x.id === id);
@@ -1317,10 +1299,10 @@ function showGirlProfile(id) {
   girlAtt.sort((a, b) => new Date(b.date) - new Date(a.date));
 
   const totalRecords = girlAtt.length;
-  const presentCount = girlAtt.filter(a => a.status === 'حاضر').length;
-  const absentCount = girlAtt.filter(a => a.status === 'غائب').length;
+  const presentCount = girlAtt.filter(a => a.status === 'Var').length;
+  const absentCount = girlAtt.filter(a => a.status === 'Yok').length;
   const attendanceRate = totalRecords > 0 ? Math.round((presentCount / totalRecords) * 100) : 0;
-  const lastAttendance = girlAtt.find(a => a.status === 'حاضر');
+  const lastAttendance = girlAtt.find(a => a.status === 'Var');
   const lastDate = lastAttendance ? lastAttendance.date : '-';
 
   const months = {};
@@ -1338,19 +1320,19 @@ function showGirlProfile(id) {
   </div>`;
 
   html += `<div class="profile-dashboard">
-    <div class="profile-stat"><div class="ps-value green">${presentCount}</div><div class="ps-label">مرات الحضور</div></div>
-    <div class="profile-stat"><div class="ps-value red">${absentCount}</div><div class="ps-label">مرات الغياب</div></div>
-    <div class="profile-stat"><div class="ps-value orange">${attendanceRate}%</div><div class="ps-label">نسبة الحضور</div></div>
-    <div class="profile-stat"><div class="ps-value">${totalRecords}</div><div class="ps-label">اجمالي السجلات</div></div>
-    <div class="profile-stat"><div class="ps-value">${lastDate}</div><div class="ps-label">اخر حضور</div></div>
+    <div class="profile-stat"><div class="ps-value green">${presentCount}</div><div class="ps-label">Devam Sayisi</div></div>
+    <div class="profile-stat"><div class="ps-value red">${absentCount}</div><div class="ps-label">Devamsizlik Sayisi</div></div>
+    <div class="profile-stat"><div class="ps-value orange">${attendanceRate}%</div><div class="ps-label">Devam Orani</div></div>
+    <div class="profile-stat"><div class="ps-value">${totalRecords}</div><div class="ps-label">Toplam Kayit</div></div>
+    <div class="profile-stat"><div class="ps-value">${lastDate}</div><div class="ps-label">Son Devam</div></div>
   </div>`;
 
   if (!Object.keys(months).length) {
-    html += '<div class="empty-state">لا توجد سجلات حضور</div>';
+    html += '<div class="empty-state">Yoklama kaydi bulunmuyor</div>';
   } else {
     Object.entries(months).sort((a, b) => b[0].localeCompare(a[0])).forEach(([month, records]) => {
-      const presents = records.filter(r => r.status === 'حاضر').length;
-      const absents = records.filter(r => r.status === 'غائب').length;
+      const presents = records.filter(r => r.status === 'Var').length;
+      const absents = records.filter(r => r.status === 'Yok').length;
       html += `<div class="profile-month">
         <div class="profile-month-header">
           <span>${DateUtil.formatMonth(month)}</span>
@@ -1361,7 +1343,7 @@ function showGirlProfile(id) {
           ${records.map(r => {
             return `<div class="profile-record">
               <span class="rec-date">${esc(r.date)} ${esc(DAY_NAMES[new Date(r.date + 'T00:00:00').getDay()] || '')}</span>
-              <span class="rec-status ${r.status === 'حاضر' ? 'present' : 'absent'}">${esc(r.status)}</span>
+              <span class="rec-status ${r.status === 'Var' ? 'present' : 'absent'}">${esc(r.status)}</span>
               ${r.notes ? `<span class="rec-notes">${esc(r.notes)}</span>` : ''}
             </div>`;
           }).join('')}
@@ -1389,36 +1371,36 @@ if (DOM.shareProfileBtn) {
     if (!g) return;
 
     const girlAtt = Object.values(state.attendanceData).filter(a => a.girlId === id);
-    const presentCount = girlAtt.filter(a => a.status === 'حاضر').length;
-    const absentCount = girlAtt.filter(a => a.status === 'غائب').length;
+    const presentCount = girlAtt.filter(a => a.status === 'Var').length;
+    const absentCount = girlAtt.filter(a => a.status === 'Yok').length;
     const attendanceRate = girlAtt.length > 0 ? Math.round((presentCount / girlAtt.length) * 100) : 0;
 
     const shareText = `${g.name}
 ${g.grade}
-\u2705 حضور: ${presentCount}
-\u274C غياب: ${absentCount}
-\uD83D\uDCCA نسبة: ${attendanceRate}%
+\u2705 Devam: ${presentCount}
+\u274C Devamsizlik: ${absentCount}
+\uD83D\uDCCA Oran: ${attendanceRate}%
 `.trim();
 
     if (navigator.share) {
-      try { await navigator.share({ title: `ملف ${g.name}`, text: shareText }); } catch (e) { /* user cancelled */ }
+      try { await navigator.share({ title: `${g.name} Profili`, text: shareText }); } catch (e) { /* kullanici iptal etti */ }
     } else {
       try {
         await navigator.clipboard.writeText(shareText);
-        showToast('تم نسخ البيانات للمشاركة', 'success');
+        showToast('Veriler paylasim icin kopyalandi', 'success');
       } catch (e) {
-        showToast('المشاركة غير متوفرة على هذا الجهاز', 'warning');
+        showToast('Bu cihazda paylasim desteklenmiyor', 'warning');
       }
     }
   });
 }
 
 // ============================================================
-// ATTENDANCE PAGE — Fixed
+// YOKLAMA SAYFASI
 // ============================================================
 function getCurrentServiceDay() {
   const dayOfWeek = new Date().getDay();
-  return JS_DAY_TO_ARABIC[dayOfWeek] || null;
+  return JS_DAY_TO_TURKISH[dayOfWeek] || null;
 }
 
 function isServiceDayDate(dateStr) {
@@ -1441,13 +1423,11 @@ function renderAttendancePage() {
   const date = DOM.attendanceDate.value;
   const activeGirls = state.girls.filter(g => !g.isDeleted);
 
-  // Check if any records exist for this date
   const hasAnyRecordsForDate = activeGirls.some(g => {
-    const key = `${g.id}_${date}_عام`;
+    const key = `${g.id}_${date}_Genel`;
     return state.attendanceData[key];
   });
 
-  // Auto-mark absent on service days if no records exist yet for this date
   if (activeGirls.length > 0 && !hasAnyRecordsForDate && isServiceDayDate(date) && !state.attendancePageInitialized) {
     state.attendancePageInitialized = true;
     markAllAbsentForDate(date);
@@ -1476,8 +1456,8 @@ if (DOM.attendanceDate) {
   });
 }
 
-if (DOM.selectAllPresent) DOM.selectAllPresent.addEventListener('click', () => selectAllStatus('حاضر'));
-if (DOM.selectAllAbsent) DOM.selectAllAbsent.addEventListener('click', () => selectAllStatus('غائب'));
+if (DOM.selectAllPresent) DOM.selectAllPresent.addEventListener('click', () => selectAllStatus('Var'));
+if (DOM.selectAllAbsent) DOM.selectAllAbsent.addEventListener('click', () => selectAllStatus('Yok'));
 
 function debouncedAttSearch() {
   clearTimeout(state.attSearchDebounceTimer);
@@ -1487,32 +1467,31 @@ function debouncedAttSearch() {
 if (DOM.attendanceSearch) DOM.attendanceSearch.addEventListener('input', debouncedAttSearch);
 
 async function toggleAttendanceStatus(girlId, girlName, date) {
-  const key = `${girlId}_${date}_عام`;
+  const key = `${girlId}_${date}_Genel`;
   const existing = state.attendanceData[key];
-  const newStatus = existing?.status === 'حاضر' ? 'غائب' : 'حاضر';
+  const newStatus = existing?.status === 'Var' ? 'Yok' : 'Var';
 
   const rec = {
     id: key,
     girlId: girlId,
     date,
     day: state.selectedDay,
-    activity: 'عام',
+    activity: 'Genel',
     status: newStatus,
     notes: existing?.notes || '',
     rating: existing?.rating || 0,
     updatedAt: Date.now(),
-    updatedBy: state.currentUser?.displayName || 'مستخدم',
+    updatedBy: state.currentUser?.displayName || 'Kullanici',
     updatedByEmail: state.currentUser?.email || ''
   };
 
   state.attendanceData[key] = rec;
 
-  // Online: save directly. Offline: queue for sync.
   if (navigator.onLine && firebaseReady && window._fb) {
     try {
       await window._fb.setDoc(window._fb.doc(db, 'attendance', key), rec);
     } catch (e) {
-      console.error('Save attendance Firestore error:', e);
+      console.error('Yoklama kaydetme hatasi:', e);
       await OfflineQueue.add({ type: 'saveAttendance', data: rec });
     }
   } else {
@@ -1537,19 +1516,19 @@ async function markAllAbsentForDate(date) {
   const batchRecords = [];
 
   for (const g of activeGirls) {
-    const key = `${g.id}_${date}_عام`;
+    const key = `${g.id}_${date}_Genel`;
     if (!state.attendanceData[key]) {
       const rec = {
         id: key,
         girlId: g.id,
         date,
         day: state.selectedDay,
-        activity: 'عام',
-        status: 'غائب',
+        activity: 'Genel',
+        status: 'Yok',
         notes: '',
         rating: 0,
         updatedAt: Date.now(),
-        updatedBy: state.currentUser?.displayName || 'مستخدم',
+        updatedBy: state.currentUser?.displayName || 'Kullanici',
         updatedByEmail: state.currentUser?.email || ''
       };
       batchRecords.push(rec);
@@ -1560,7 +1539,6 @@ async function markAllAbsentForDate(date) {
     state.attendanceData[rec.id] = rec;
   }
 
-  // Online: batch save to Firestore. Offline: queue batch for sync.
   if (navigator.onLine && firebaseReady && window._fb && batchRecords.length > 0) {
     try {
       const batch = window._fb.writeBatch(db);
@@ -1569,7 +1547,7 @@ async function markAllAbsentForDate(date) {
       }
       await batch.commit();
     } catch (e) {
-      console.error('Batch save attendance Firestore error:', e);
+      console.error('Toplu yoklama kaydetme hatasi:', e);
       await OfflineQueue.add({ type: 'saveBatchAttendance', data: { records: batchRecords } });
     }
   } else if (batchRecords.length > 0) {
@@ -1577,8 +1555,8 @@ async function markAllAbsentForDate(date) {
   }
 
   if (batchRecords.length > 0) {
-    await logHistory('تسجيل حضور', `تعيين الغياب التلقائي ليوم ${date} (${state.selectedDay})`);
-    showToast('تم تعيين الغياب التلقائي ليوم عمل', 'info');
+    await logHistory('Yoklama', `Otomatik devamsizlik atandi: ${date} (${state.selectedDay})`);
+    showToast('Calisma gunu icin otomatik devamsizlik atandi', 'info');
   }
 
   renderAttendanceList();
@@ -1589,32 +1567,31 @@ async function markAllAbsentForDate(date) {
 async function selectAllStatus(status) {
   if (!DOM.attendanceDate) return;
   const date = DOM.attendanceDate.value;
-  if (!date) { showToast('الرجاء اختيار التاريخ اولاً', 'error'); return; }
+  if (!date) { showToast('Lutfen once tarih secin', 'error'); return; }
 
   const activeGirls = state.girls.filter(g => !g.isDeleted);
   const batchRecords = [];
 
   for (const g of activeGirls) {
-    const key = `${g.id}_${date}_عام`;
+    const key = `${g.id}_${date}_Genel`;
     const existing = state.attendanceData[key];
     const rec = {
       id: key,
       girlId: g.id,
       date,
       day: state.selectedDay,
-      activity: 'عام',
+      activity: 'Genel',
       status: status,
       notes: existing?.notes || '',
       rating: existing?.rating || 0,
       updatedAt: Date.now(),
-      updatedBy: state.currentUser?.displayName || 'مستخدم',
+      updatedBy: state.currentUser?.displayName || 'Kullanici',
       updatedByEmail: state.currentUser?.email || ''
     };
     batchRecords.push(rec);
     state.attendanceData[key] = rec;
   }
 
-  // Online: batch save to Firestore. Offline: queue batch for sync.
   if (navigator.onLine && firebaseReady && window._fb && batchRecords.length > 0) {
     try {
       const batch = window._fb.writeBatch(db);
@@ -1623,15 +1600,15 @@ async function selectAllStatus(status) {
       }
       await batch.commit();
     } catch (e) {
-      console.error('Batch save attendance Firestore error:', e);
+      console.error('Toplu yoklama kaydetme hatasi:', e);
       await OfflineQueue.add({ type: 'saveBatchAttendance', data: { records: batchRecords } });
     }
   } else if (batchRecords.length > 0) {
     await OfflineQueue.add({ type: 'saveBatchAttendance', data: { records: batchRecords } });
   }
 
-  await logHistory('تسجيل حضور', `${status === 'حاضر' ? 'تحديد الكل حاضر' : 'تحديد الكل غائب'} - عام - ${date}`);
-  showToast(status === 'حاضر' ? 'تم تحديد الكل حاضر' : 'تم تحديد الكل غائب', 'success');
+  await logHistory('Yoklama', `${status === 'Var' ? 'Tumu Var' : 'Tumu Yok'} olarak isaretlendi - Genel - ${date}`);
+  showToast(status === 'Var' ? 'Tum calisanlar var olarak isaretlendi' : 'Tum calisanlar yok olarak isaretlendi', 'success');
   renderAttendanceList();
   if (state.currentPage === 'home') renderHome();
   if (state.currentPage === 'stats') renderStats();
@@ -1642,20 +1619,20 @@ function renderAttendanceList() {
   if (!DOM.attendanceDate || !DOM.attendanceList) return;
   const date = DOM.attendanceDate.value;
   const el = DOM.attendanceList;
-  if (!date) { el.innerHTML = '<div class="empty-state">الرجاء اختيار التاريخ</div>'; return; }
+  if (!date) { el.innerHTML = '<div class="empty-state">Lutfen tarih secin</div>'; return; }
 
   let activeGirls = state.girls.filter(g => !g.isDeleted);
   const searchQuery = DOM.attendanceSearch?.value?.trim() || '';
   if (searchQuery) {
-    const qNorm = normalizeArabic(searchQuery);
-    activeGirls = activeGirls.filter(g => normalizeArabic(g.name).includes(qNorm));
+    const qNorm = normalizeTurkish(searchQuery);
+    activeGirls = activeGirls.filter(g => normalizeTurkish(g.name).includes(qNorm));
   }
 
   let present = 0, absent = 0;
   const frag = document.createDocumentFragment();
 
   if (searchQuery && !activeGirls.length) {
-    el.innerHTML = '<div class="empty-state">لا توجد نتائج للبحث</div>';
+    el.innerHTML = '<div class="empty-state">Arama sonucu bulunamadi</div>';
     if (DOM.presentCount) DOM.presentCount.textContent = 0;
     if (DOM.absentCount) DOM.absentCount.textContent = 0;
     if (DOM.totalCount) DOM.totalCount.textContent = 0;
@@ -1663,7 +1640,7 @@ function renderAttendanceList() {
   }
 
   if (!activeGirls.length) {
-    el.innerHTML = '<div class="empty-state">لا توجد موظفين مسجلين<br><small>اضف موظفين اولاً من صفحة الموظفين</small></div>';
+    el.innerHTML = '<div class="empty-state">Kayitli calisan yok<br><small>Once Calisanlar sayfasindan calisan ekleyin</small></div>';
     if (DOM.presentCount) DOM.presentCount.textContent = 0;
     if (DOM.absentCount) DOM.absentCount.textContent = 0;
     if (DOM.totalCount) DOM.totalCount.textContent = 0;
@@ -1671,10 +1648,10 @@ function renderAttendanceList() {
   }
 
   activeGirls.forEach(g => {
-    const key = `${g.id}_${date}_عام`;
+    const key = `${g.id}_${date}_Genel`;
     const rec = state.attendanceData[key];
-    let statusClass = 'absent', statusIcon = '&#10007;', statusText = 'غائب';
-    if (rec?.status === 'حاضر') { statusClass = 'present'; statusIcon = '&#10003;'; statusText = 'حاضر'; present++; }
+    let statusClass = 'absent', statusIcon = '&#10007;', statusText = 'Yok';
+    if (rec?.status === 'Var') { statusClass = 'present'; statusIcon = '&#10003;'; statusText = 'Var'; present++; }
     else { absent++; }
 
     const div = document.createElement('div');
@@ -1688,10 +1665,10 @@ function renderAttendanceList() {
       <div class="att-info">
         <span class="att-name">${esc(g.name)}</span>
         ${rec?.notes ? `<span class="att-note">${esc(rec.notes)}</span>` : ''}
-        ${rec?.rating > 0 ? `<span class="att-note">التقييم: ${'★'.repeat(rec.rating)}${'☆'.repeat(5 - rec.rating)}</span>` : ''}
+        ${rec?.rating > 0 ? `<span class="att-note">Degerlendirme: ${'\u2605'.repeat(rec.rating)}${'\u2606'.repeat(5 - rec.rating)}</span>` : ''}
       </div>
       <span class="att-status-text ${statusClass}">${statusText}</span>
-      <button class="att-delete-btn" data-att-key="${esc(key)}" title="حذف السجل">&#10060;</button>`;
+      <button class="att-delete-btn" data-att-key="${esc(key)}" title="Kaydi sil">&#10060;</button>`;
     frag.appendChild(div);
   });
 
@@ -1707,42 +1684,41 @@ async function deleteAttendanceRecord(key) {
   if (!rec) return;
 
   const g = state.girls.find(x => x.id === rec.girlId);
-  const gName = g ? g.name : 'موظف';
+  const gName = g ? g.name : 'Calisan';
 
   showConfirm({
-    icon: '&#9888;', title: 'حذف سجل الحضور',
-    msg: `هل انت متأكد من حذف سجل ${esc(gName)} ليوم ${esc(rec.date)}؟`,
-    okLabel: 'حذف',
+    icon: '&#9888;', title: 'Yoklama kaydini sil',
+    msg: `${esc(gName)} icin ${esc(rec.date)} tarihli yoklama kaydini silmek istediginizden emin misiniz?`,
+    okLabel: 'Sil',
     onOk: async () => {
       try {
         delete state.attendanceData[key];
-        // Online: delete directly. Offline: queue for sync.
         if (navigator.onLine && firebaseReady && window._fb) {
           try {
             await window._fb.deleteDoc(window._fb.doc(db, 'attendance', key));
           } catch (e) {
-            console.error('Delete attendance Firestore error:', e);
+            console.error('Yoklama silme hatasi:', e);
             await OfflineQueue.add({ type: 'deleteAttendance', data: { key } });
           }
         } else {
           await OfflineQueue.add({ type: 'deleteAttendance', data: { key } });
         }
-        await logHistory('حذف سجل حضور', `${gName} - ${rec.date} - ${rec.activity} - ${rec.status}`);
-        showToast('تم حذف سجل الحضور', 'success');
+        await logHistory('Yoklama Silme', `${gName} - ${rec.date} - ${rec.activity} - ${rec.status}`);
+        showToast('Yoklama kaydi silindi', 'success');
         renderAttendanceList();
         if (state.currentPage === 'stats') renderStats();
         if (state.currentPage === 'home') renderHome();
         if (state.currentPage === 'calendar') renderCalendar();
       } catch (err) {
-        console.error('Delete attendance error:', err);
-        showToast('حدث خطأ اثناء الحذف', 'error');
+        console.error('Yoklama silme hatasi:', err);
+        showToast('Silme sirasinda bir hata olustu', 'error');
       }
     }
   });
 }
 
 // ============================================================
-// ATTENDANCE ENTRY MODAL (with rating)
+// YOKLAMA KAYIT MODAL (degerlendirme ile)
 // ============================================================
 function openAttendanceEntry(girlId, girlName, date) {
   state.currentAttendanceGirlId = girlId;
@@ -1751,22 +1727,21 @@ function openAttendanceEntry(girlId, girlName, date) {
   if (DOM.modalGirlName) DOM.modalGirlName.textContent = girlName;
   if (DOM.attendanceNotes) DOM.attendanceNotes.value = '';
 
-  // Reset stars
+  // Yildizlari sifirla
   $$('#starsInput .star').forEach(s => s.classList.remove('selected'));
 
-  const key = `${girlId}_${date}_عام`;
+  const key = `${girlId}_${date}_Genel`;
   const existing = state.attendanceData[key];
   if (existing) {
     $$('.attend-btn').forEach(b => b.classList.toggle('selected', b.dataset.status === existing.status));
     if (DOM.attendanceNotes) DOM.attendanceNotes.value = existing.notes || '';
-    // Set rating
     if (existing.rating > 0) {
       state.currentAttendanceRating = existing.rating;
       $$('#starsInput .star').forEach(s => {
         s.classList.toggle('selected', parseInt(s.dataset.rating) <= existing.rating);
       });
     }
-    if (DOM.ratingSection) DOM.ratingSection.classList.toggle('hidden', existing.status !== 'حاضر');
+    if (DOM.ratingSection) DOM.ratingSection.classList.toggle('hidden', existing.status !== 'Var');
   } else {
     $$('.attend-btn').forEach(b => b.classList.remove('selected'));
     if (DOM.ratingSection) DOM.ratingSection.classList.remove('hidden');
@@ -1778,11 +1753,11 @@ $$('.attend-btn').forEach(b => {
   b.addEventListener('click', () => {
     $$('.attend-btn').forEach(x => x.classList.remove('selected'));
     b.classList.add('selected');
-    if (DOM.ratingSection) DOM.ratingSection.classList.toggle('hidden', b.dataset.status !== 'حاضر');
+    if (DOM.ratingSection) DOM.ratingSection.classList.toggle('hidden', b.dataset.status !== 'Var');
   });
 });
 
-// Star rating handlers
+// Yildiz degerlendirme
 $$('#starsInput .star').forEach(star => {
   star.addEventListener('click', () => {
     const rating = parseInt(star.dataset.rating);
@@ -1798,31 +1773,30 @@ if (DOM.saveAttendanceEntry) {
     if (!DOM.attendanceDate) return;
     const date = DOM.attendanceDate.value;
     const statusBtn = document.querySelector('.attend-btn.selected');
-    if (!statusBtn) { showToast('الرجاء تحديد الحضور او الغياب', 'error'); return; }
+    if (!statusBtn) { showToast('Lutfen Var veya Yok secin', 'error'); return; }
 
-    const key = `${state.currentAttendanceGirlId}_${date}_عام`;
+    const key = `${state.currentAttendanceGirlId}_${date}_Genel`;
     const rec = {
       id: key,
       girlId: state.currentAttendanceGirlId,
       date,
       day: state.selectedDay,
-      activity: 'عام',
+      activity: 'Genel',
       status: statusBtn.dataset.status,
       notes: DOM.attendanceNotes ? DOM.attendanceNotes.value.trim() : '',
-      rating: statusBtn.dataset.status === 'حاضر' ? (state.currentAttendanceRating || 0) : 0,
+      rating: statusBtn.dataset.status === 'Var' ? (state.currentAttendanceRating || 0) : 0,
       updatedAt: Date.now(),
-      updatedBy: state.currentUser?.displayName || 'مستخدم',
+      updatedBy: state.currentUser?.displayName || 'Kullanici',
       updatedByEmail: state.currentUser?.email || ''
     };
 
     state.attendanceData[key] = rec;
 
-    // Online: save directly. Offline: queue for sync.
     if (navigator.onLine && firebaseReady && window._fb) {
       try {
         await window._fb.setDoc(window._fb.doc(db, 'attendance', key), rec);
       } catch (e) {
-        console.error('Save attendance Firestore error:', e);
+        console.error('Yoklama kaydetme hatasi:', e);
         await OfflineQueue.add({ type: 'saveAttendance', data: rec });
       }
     } else {
@@ -1830,9 +1804,9 @@ if (DOM.saveAttendanceEntry) {
     }
 
     const gName = state.girls.find(g => g.id === state.currentAttendanceGirlId)?.name || '';
-    await logHistory('تسجيل حضور', `${gName} - عام - ${date} - ${rec.status}`);
+    await logHistory('Yoklama', `${gName} - Genel - ${date} - ${rec.status}`);
     closeModal('attendanceModal');
-    showToast('تم الحفظ', 'success');
+    showToast('Kaydedildi', 'success');
     renderAttendanceList();
 
     if (state.currentPage === 'home') renderHome();
@@ -1841,20 +1815,21 @@ if (DOM.saveAttendanceEntry) {
   });
 }
 
+
 // ============================================================
-// CALENDAR PAGE — Fixed
+// TAKVIM SAYFASI
 // ============================================================
 function renderCalendar() {
   const year = state.calendarDate.getFullYear();
   const month = state.calendarDate.getMonth();
-  if (DOM.calMonthYear) DOM.calMonthYear.textContent = state.calendarDate.toLocaleDateString('ar-EG', { year: 'numeric', month: 'long' });
+  if (DOM.calMonthYear) DOM.calMonthYear.textContent = state.calendarDate.toLocaleDateString('tr-TR', { year: 'numeric', month: 'long' });
 
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const todayStr = DateUtil.toStr();
 
   let html = '<div class="cal-weekdays">';
-  ['اح', 'اث', 'ثل', 'ار', 'خم', 'جم', 'سب'].forEach(d => html += `<div class="cal-wday">${d}</div>`);
+  ['Paz','Pzt','Sal','Crs','Prs','Cum','Cmt'].forEach(d => html += `<div class="cal-wday">${d}</div>`);
   html += '</div><div class="cal-days">';
   for (let i = 0; i < firstDay; i++) html += '<div class="cal-day empty"></div>';
   for (let d = 1; d <= daysInMonth; d++) {
@@ -1871,7 +1846,7 @@ function renderCalendar() {
   html += '</div>';
   if (DOM.calendarGrid) DOM.calendarGrid.innerHTML = html;
 
-  // Auto-show today's details if today is in the current month view
+  // Bu ay gorunumundeyse bugunun detaylarini otomatik goster
   const now = new Date();
   if (year === now.getFullYear() && month === now.getMonth()) {
     currentDayDetailDate = todayStr;
@@ -1898,15 +1873,15 @@ function refreshDayDetail() {
   const filteredRecords = records.filter(r => activeGirlIds.has(r.girlId));
 
   if (!filteredRecords.length) {
-    el.innerHTML = `<div class="day-detail-header">${dateStr}</div><div class="empty-state">لا توجد سجلات لهذا اليوم</div>`;
+    el.innerHTML = `<div class="day-detail-header">${dateStr}</div><div class="empty-state">Bu gun icin kayit bulunmuyor</div>`;
   } else {
     const grouped = {};
-    filteredRecords.forEach(r => { if (!grouped[r.activity || 'عام']) grouped[r.activity || 'عام'] = []; grouped[r.activity || 'عام'].push(r); });
+    filteredRecords.forEach(r => { if (!grouped[r.activity || 'Genel']) grouped[r.activity || 'Genel'] = []; grouped[r.activity || 'Genel'].push(r); });
     let html = `<div class="day-detail-header">${dateStr}</div>`;
     Object.entries(grouped).forEach(([act, recs]) => {
-      const presentCount = recs.filter(r => r.status === 'حاضر').length;
-      const absentCount = recs.filter(r => r.status === 'غائب').length;
-      html += `<div class="day-activity"><b>${esc(act)}</b>: <span class="green-text">${presentCount} حاضر</span> \u00B7 <span class="red-text">${absentCount} غائب</span> من ${recs.length}</div>`;
+      const presentCount = recs.filter(r => r.status === 'Var').length;
+      const absentCount = recs.filter(r => r.status === 'Yok').length;
+      html += `<div class="day-activity"><b>${esc(act)}</b>: <span class="green-text">${presentCount} Var</span> \u00B7 <span class="red-text">${absentCount} Yok</span> (toplam ${recs.length})</div>`;
     });
     el.innerHTML = html;
   }
@@ -1934,7 +1909,7 @@ if (DOM.calNext) {
 }
 
 // ============================================================
-// ACTIVITY DETAIL MODAL
+// AKTIVITE DETAY MODAL
 // ============================================================
 function openActivityDetailModal(activity, period, gradeFilter, customDate) {
   const { start, end } = getPeriodBounds(period, customDate);
@@ -1961,8 +1936,8 @@ function openActivityDetailModal(activity, period, gradeFilter, customDate) {
     const girl = activeGirls.find(g => g.id === girlId);
     if (!girl) return;
 
-    const pCount = girlRecords.filter(r => r.status === 'حاضر').length;
-    const aCount = girlRecords.filter(r => r.status === 'غائب').length;
+    const pCount = girlRecords.filter(r => r.status === 'Var').length;
+    const aCount = girlRecords.filter(r => r.status === 'Yok').length;
     const total = girlRecords.length;
     const rate = total > 0 ? Math.round((pCount / total) * 100) : 0;
 
@@ -1971,13 +1946,13 @@ function openActivityDetailModal(activity, period, gradeFilter, customDate) {
     else absentGirls.push(entry);
   });
 
-  presentGirls.sort((a, b) => b.attendanceRate - a.attendanceRate || a.girl.name.localeCompare(b.girl.name, 'ar'));
-  absentGirls.sort((a, b) => b.attendanceRate - a.attendanceRate || a.girl.name.localeCompare(b.girl.name, 'ar'));
+  presentGirls.sort((a, b) => b.attendanceRate - a.attendanceRate || a.girl.name.localeCompare(b.girl.name, 'tr'));
+  absentGirls.sort((a, b) => b.attendanceRate - a.attendanceRate || a.girl.name.localeCompare(b.girl.name, 'tr'));
 
   state.currentActivityDetail = { activity, period, presentGirls, absentGirls };
   state.activityDetailTab = 'present';
 
-  if (DOM.activityDetailTitle) DOM.activityDetailTitle.textContent = `تفاصيل ${activity}`;
+  if (DOM.activityDetailTitle) DOM.activityDetailTitle.textContent = `${activity} Detayi`;
   if (DOM.activityDetailIcon) DOM.activityDetailIcon.innerHTML = ACTIVITY_ICONS[activity] || '&#128202;';
   if (DOM.activityDetailName) DOM.activityDetailName.textContent = activity;
   if (DOM.activityDetailPeriod) DOM.activityDetailPeriod.textContent = periodLabel;
@@ -2002,7 +1977,7 @@ function renderActivityDetailTab() {
   const el = DOM.activityDetailList;
   if (!el) return;
   if (!list.length) {
-    const msg = isPresentTab ? 'لا يوجد حاضرون للفترة المحددة' : 'لا يوجد غائبون للفترة المحددة';
+    const msg = isPresentTab ? 'Belirtilen donemde devam eden calisan yok' : 'Belirtilen donemde devamsizlik olan calisan yok';
     el.innerHTML = `<div class="empty-state">${msg}</div>`;
     return;
   }
@@ -2016,7 +1991,7 @@ function renderActivityDetailTab() {
       <div class="detail-girl-avatar">${esc(girl.name[0])}</div>
       <div class="detail-girl-info">
         <div class="detail-girl-name">${esc(girl.name)}</div>
-        <div class="detail-girl-grade">${esc(girl.grade)} \u00B7 ${presentCount} حضور \u00B7 ${absentCount} غياب \u00B7 ${attendanceRate}% نسبة \u00B7 اخر: ${esc(latestRecord.date)}</div>
+        <div class="detail-girl-grade">${esc(girl.grade)} \u00B7 ${presentCount} devam \u00B7 ${absentCount} devamsizlik \u00B7 %${attendanceRate} oran \u00B7 son: ${esc(latestRecord.date)}</div>
       </div>
       <div class="detail-status-icon ${isPresentTab ? 'present' : 'absent'}">
         ${isPresentTab ? '&#10003;' : '&#10007;'}
@@ -2052,7 +2027,7 @@ if (DOM.closeActivityDetailModal) {
 }
 
 // ============================================================
-// STATS PAGE
+// ISTATISTIK SAYFASI
 // ============================================================
 function renderStats() {
   const selectedDate = DOM.statsMonth && DOM.statsMonth.value ? DOM.statsMonth.value : DateUtil.toStr();
@@ -2072,22 +2047,22 @@ function renderStats() {
   );
 
   const totalSessions = new Set(monthAtt.map(a => a.date)).size;
-  const presents = monthAtt.filter(a => a.status === 'حاضر').length;
-  const absents = monthAtt.filter(a => a.status === 'غائب').length;
+  const presents = monthAtt.filter(a => a.status === 'Var').length;
+  const absents = monthAtt.filter(a => a.status === 'Yok').length;
 
-  const dateLabel = new Date(selectedDate + 'T00:00:00').toLocaleDateString('ar-EG', { month: 'long', day: 'numeric' });
+  const dateLabel = new Date(selectedDate + 'T00:00:00').toLocaleDateString('tr-TR', { month: 'long', day: 'numeric' });
 
   if (DOM.bigStatsGrid) {
     DOM.bigStatsGrid.innerHTML = `
-      <div class="big-stat-card"><div class="big-num">${activeGirls.length}</div><div>الموظفين</div></div>
-      <div class="big-stat-card"><div class="big-num">${totalSessions}</div><div>ايام عمل مسجلة</div></div>
-      <div class="big-stat-card green-card"><div class="big-num">${presents}</div><div>اجمالي الحضور</div></div>
-      <div class="big-stat-card red-card"><div class="big-num">${absents}</div><div>اجمالي الغياب</div></div>`;
+      <div class="big-stat-card"><div class="big-num">${activeGirls.length}</div><div>Calisan</div></div>
+      <div class="big-stat-card"><div class="big-num">${totalSessions}</div><div>Kayitli Calisma Gunu</div></div>
+      <div class="big-stat-card green-card"><div class="big-num">${presents}</div><div>Toplam Devam</div></div>
+      <div class="big-stat-card red-card"><div class="big-num">${absents}</div><div>Toplam Devamsizlik</div></div>`;
   }
 
   const absenceByGirl = {};
   activeGirls.forEach(g => absenceByGirl[g.id] = 0);
-  monthAtt.filter(a => a.status === 'غائب').forEach(a => {
+  monthAtt.filter(a => a.status === 'Yok').forEach(a => {
     if (absenceByGirl[a.girlId] !== undefined) absenceByGirl[a.girlId]++;
   });
   const maxAbs = Math.max(...Object.values(absenceByGirl), 1);
@@ -2105,12 +2080,12 @@ function renderStats() {
           <span class="chart-val">${count}</span>
         </div>`;
       }).join('')
-      : `<div class="empty-state">لا توجد غيابات حتى ${dateLabel} &#127881;</div>`;
+      : `<div class="empty-state">${dateLabel} tarihine kadar devamsizlik bulunmuyor &#127881;</div>`;
   }
 
   const presentsByGirl = {};
   activeGirls.forEach(g => presentsByGirl[g.id] = 0);
-  monthAtt.filter(a => a.status === 'حاضر').forEach(a => {
+  monthAtt.filter(a => a.status === 'Var').forEach(a => {
     if (presentsByGirl[a.girlId] !== undefined) presentsByGirl[a.girlId]++;
   });
 
@@ -2127,10 +2102,10 @@ function renderStats() {
           <span class="rank-num">${i + 1}</span>
           <span class="rank-name">${esc(g.name)}</span>
           <span class="rank-grade">${esc(g.grade)}</span>
-          <span class="rank-count">${count} يوم</span>
+          <span class="rank-count">${count} gun</span>
         </div>`;
       }).join('')
-      : `<div class="empty-state">لا توجد بيانات حضور حتى ${dateLabel}</div>`;
+      : `<div class="empty-state">${dateLabel} tarihine kadar devam verisi bulunmuyor</div>`;
   }
 }
 
@@ -2146,7 +2121,7 @@ if (DOM.timeFilterTabs) {
 }
 
 // ============================================================
-// HISTORY PAGE — Fixed
+// GECMIS SAYFASI
 // ============================================================
 async function renderHistory(append = false) {
   const el = DOM.historyList;
@@ -2154,14 +2129,13 @@ async function renderHistory(append = false) {
   if (!el) return;
 
   if (!append) {
-    el.innerHTML = '<div class="empty-state">جارٍ التحميل...</div>';
+    el.innerHTML = '<div class="empty-state">Yukleniyor...</div>';
     state.historyOffset = 0;
 
-    // Collect logs from all sources
     const allLogs = [];
     const seenIds = new Set();
 
-    // 1. Try Firestore first (online)
+    // 1. Once Firestore'dan al (cevrimici)
     if (firebaseReady && window._fb) {
       try {
         const snap = await window._fb.getDocs(
@@ -2174,10 +2148,10 @@ async function renderHistory(append = false) {
             allLogs.push(log);
           }
         });
-      } catch (e) { console.warn('Firestore history load failed:', e); }
+      } catch (e) { console.warn('Firestore gecmis yukleme hatasi:', e); }
     }
 
-    // 2. Also load from IndexedDB (covers offline entries)
+    // 2. IndexedDB'den de al (cevrimdisi kayitlari da kapsar)
     try {
       const idbLogs = await IDB.getAll('history');
       idbLogs.forEach(log => {
@@ -2186,17 +2160,17 @@ async function renderHistory(append = false) {
           allLogs.push(log);
         }
       });
-    } catch (e) { console.warn('IDB history load failed:', e); }
+    } catch (e) { console.warn('IDB gecmis yukleme hatasi:', e); }
 
-    // Sort newest first
+    // En yeniden en eskiye sirala
     allLogs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-    // Apply filter
+    // Filtrele
     state.historyAllLogs = filter ? allLogs.filter(l => l.action && l.action.includes(filter)) : allLogs;
   }
 
   if (!state.historyAllLogs.length) {
-    el.innerHTML = '<div class="empty-state">لا توجد سجلات تاريخية</div>';
+    el.innerHTML = '<div class="empty-state">Gecmis kaydi bulunmuyor</div>';
     if (DOM.loadMoreHistory) DOM.loadMoreHistory.classList.add('hidden');
     return;
   }
@@ -2210,7 +2184,7 @@ async function renderHistory(append = false) {
       <div class="history-info">
         <span class="history-action">${esc(log.action)}</span>
         <span class="history-detail">${esc(log.detail)}</span>
-        <span class="history-meta">${esc(log.by || 'مستخدم')} &middot; ${new Date(log.timestamp).toLocaleString('ar-EG')}</span>
+        <span class="history-meta">${esc(log.by || 'Kullanici')} &middot; ${new Date(log.timestamp).toLocaleString('tr-TR')}</span>
       </div>
     </div>`).join('');
 
@@ -2226,14 +2200,12 @@ if (DOM.loadMoreHistoryBtn) DOM.loadMoreHistoryBtn.addEventListener('click', () 
 if (DOM.clearHistoryBtn) {
   DOM.clearHistoryBtn.addEventListener('click', () => {
     showConfirm({
-      icon: '&#9888;', title: 'مسح السجل التاريخي',
-      msg: 'هل انت متأكد؟ سيتم مسح كل السجلات نهائياً ولا يمكن التراجع.',
-      okLabel: 'مسح الكل',
+      icon: '&#9888;', title: 'Gecmisi temizle',
+      msg: 'Emin misiniz? Tum kayitlar kalici olarak silinecek ve geri alinamaz.',
+      okLabel: 'Tumunu Temizle',
       onOk: async () => {
-        // Clear IndexedDB
-        try { await IDB.clear('history'); } catch (e) { console.warn('IDB clear failed:', e); }
+        try { await IDB.clear('history'); } catch (e) { console.warn('IDB temizleme hatasi:', e); }
         state.historyAllLogs = [];
-        // Clear Firestore
         if (firebaseReady && window._fb) {
           try {
             const snap = await window._fb.getDocs(window._fb.collection(db, 'history'));
@@ -2244,9 +2216,9 @@ if (DOM.clearHistoryBtn) {
                 await batch.commit();
               }
             }
-          } catch (e) { console.error('Firestore clear history error:', e); }
+          } catch (e) { console.error('Firestore gecmis temizleme hatasi:', e); }
         }
-        showToast('تم مسح السجل التاريخي', 'success');
+        showToast('Gecmis kayitlari temizlendi', 'success');
         renderHistory(false);
       }
     });
@@ -2254,10 +2226,10 @@ if (DOM.clearHistoryBtn) {
 }
 
 function getHistoryIcon(action) {
-  if (action.includes('اضافة')) return '&#10133;';
-  if (action.includes('تعديل')) return '&#9999;';
-  if (action.includes('حذف')) return '&#10060;';
-  if (action.includes('حضور')) return '&#128203;';
+  if (action.includes('Ekleme')) return '&#10133;';
+  if (action.includes('Duzenleme')) return '&#9999;';
+  if (action.includes('Silme')) return '&#10060;';
+  if (action.includes('Yoklama')) return '&#128203;';
   return '&#128295;';
 }
 
@@ -2266,13 +2238,13 @@ async function logHistory(action, detail, customTimestamp) {
   const log = {
     id: 'log_' + ts + '_' + Math.random().toString(36).slice(2, 7),
     action, detail,
-    by: state.currentUser?.displayName || 'مستخدم',
+    by: state.currentUser?.displayName || 'Kullanici',
     byEmail: state.currentUser?.email || '',
     timestamp: ts
   };
-  // Save to IndexedDB first (always works, even offline)
-  try { await IDB.add('history', log); } catch (e) { console.warn('IDB history save failed:', e); }
-  // Save to Firestore or queue for sync
+  // Once IndexedDB'ye kaydet (her zaman calisir, cevrimdisi dahil)
+  try { await IDB.add('history', log); } catch (e) { console.warn('IDB gecmis kaydetme hatasi:', e); }
+  // Firestore'a kaydet veya senkronizasyon kuyruguna ekle
   if (navigator.onLine && firebaseReady && window._fb) {
     try { await window._fb.setDoc(window._fb.doc(db, 'history', log.id), log); }
     catch (e) {
@@ -2284,16 +2256,16 @@ async function logHistory(action, detail, customTimestamp) {
 }
 
 // ============================================================
-// EXPORT PAGE — Fixed
+// DISARI AKTAR SAYFASI
 // ============================================================
 function renderExport() {
   if (DOM.exportMonth && !DOM.exportMonth.value) DOM.exportMonth.value = DateUtil.toStr();
 }
 
-// Excel export
+// Excel aktarimi
 if (DOM.exportCSV) {
   DOM.exportCSV.addEventListener('click', () => {
-    if (!XLSX) { showToast('مكتبة Excel غير محملة، حاول تحديث الصفحة', 'error'); return; }
+    if (!XLSX) { showToast('Excel kutuphanesi yuklenmedi, sayfayi yenileyin', 'error'); return; }
 
     const exportMode = document.querySelector('input[name="exportMode"]:checked')?.value || 'day';
     const exportDate = DOM.exportMonth.value || DateUtil.toStr();
@@ -2305,12 +2277,12 @@ if (DOM.exportCSV) {
       const daysInMonth = new Date(year, month, 0).getDate();
       exportStart = exportDate.substring(0, 7) + '-01';
       exportEnd = exportDate.substring(0, 7) + '-' + String(daysInMonth).padStart(2, '0');
-      reportTitle = 'تقرير حضور شهر ' + DateUtil.formatMonth(exportDate.substring(0, 7));
+      reportTitle = DateUtil.formatMonth(exportDate.substring(0, 7)) + ' ayi devam raporu';
     } else {
       exportStart = exportDate;
       exportEnd = exportDate;
       const dayName = DAY_NAMES[new Date(exportDate + 'T00:00:00').getDay()] || '';
-      reportTitle = 'تقرير حضور يوم ' + exportDate + ' (' + dayName + ')';
+      reportTitle = exportDate + ' (' + dayName + ') gunu devam raporu';
     }
 
     const activeGirlIds = new Set(state.girls.filter(g => !g.isDeleted).map(g => g.id));
@@ -2323,11 +2295,11 @@ if (DOM.exportCSV) {
     if (exportMode === 'month') {
       const monthName = DateUtil.formatMonth(exportDate.substring(0, 7));
       const wsData = [];
-      wsData.push(['تقرير حضور شهر ' + monthName]);
+      wsData.push([monthName + ' Ayi Devam Raporu']);
       wsData.push([]);
-      wsData.push(['عدد الموظفين', activeGirlIds.size]);
+      wsData.push(['Calisan Sayisi', activeGirlIds.size]);
       wsData.push([]);
-      wsData.push(['الاسم', 'اجمالي الحضور', 'اجمالي الغياب']);
+      wsData.push(['Ad Soyad', 'Toplam Devam', 'Toplam Devamsizlik']);
 
       const grouped = {};
       exportAtt.forEach(a => {
@@ -2335,11 +2307,11 @@ if (DOM.exportCSV) {
           const g = state.girls.find(x => x.id === a.girlId);
           grouped[a.girlId] = { name: g?.name || '', totalPresent: 0, totalAbsent: 0 };
         }
-        if (a.status === 'حاضر') grouped[a.girlId].totalPresent++;
+        if (a.status === 'Var') grouped[a.girlId].totalPresent++;
         else grouped[a.girlId].totalAbsent++;
       });
 
-      const sortedGirls = Object.values(grouped).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+      const sortedGirls = Object.values(grouped).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
 
       sortedGirls.forEach(r => {
         wsData.push([r.name, r.totalPresent, r.totalAbsent]);
@@ -2347,54 +2319,54 @@ if (DOM.exportCSV) {
 
       const ws = XLSX.utils.aoa_to_sheet(wsData);
       ws['!cols'] = [{ wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 14 }, { wch: 14 }];
-      ws['!dir'] = 'rtl';
-      XLSX.utils.book_append_sheet(wb, ws, 'ملخص الشهر');
+      ws['!dir'] = 'ltr';
+      XLSX.utils.book_append_sheet(wb, ws, 'Ay Ozeti');
 
-      // === Sheet 2: Detailed Daily Records ===
+      // === Sayfa 2: Gunluk Detayli Kayitlar ===
       exportAtt.sort((a, b) => {
         if (a.date !== b.date) return a.date.localeCompare(b.date);
-        return (a.activity || '').localeCompare(b.activity || '', 'ar');
+        return (a.activity || '').localeCompare(b.activity || '', 'tr');
       });
 
       const detailData = [];
-      detailData.push(['تقرير تفصيلي — ' + monthName]);
+      detailData.push([monthName + ' - Detayli Rapor']);
       detailData.push([]);
-      detailData.push(['التاريخ', 'اليوم', 'الموظف', 'الحالة', 'ملاحظات']);
+      detailData.push(['Tarih', 'Gun', 'Calisan', 'Durum', 'Notlar']);
 
       exportAtt.forEach(a => {
         const g = state.girls.find(x => x.id === a.girlId);
         const dayName = DAY_NAMES[new Date(a.date + 'T00:00:00').getDay()] || '';
-        detailData.push([a.date, dayName, g?.name || '', a.status === 'حاضر' ? '\u2713' : '\u2717', a.notes || '']);
+        detailData.push([a.date, dayName, g?.name || '', a.status === 'Var' ? '\u2713' : '\u2717', a.notes || '']);
       });
 
       const wsDetail = XLSX.utils.aoa_to_sheet(detailData);
       wsDetail['!cols'] = [{ wch: 14 }, { wch: 10 }, { wch: 24 }, { wch: 14 }, { wch: 10 }, { wch: 8 }, { wch: 12 }, { wch: 24 }];
-      wsDetail['!dir'] = 'rtl';
-      XLSX.utils.book_append_sheet(wb, wsDetail, 'تفاصيل يومية');
+      wsDetail['!dir'] = 'ltr';
+      XLSX.utils.book_append_sheet(wb, wsDetail, 'Gunluk Detaylar');
 
     } else {
       const wsData = [];
       wsData.push([reportTitle]);
       wsData.push([]);
-      wsData.push(['الاسم', 'الحالة']);
+      wsData.push(['Ad Soyad', 'Durum']);
 
-      const activeGirls = state.girls.filter(g => !g.isDeleted).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+      const activeGirls = state.girls.filter(g => !g.isDeleted).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
       activeGirls.forEach(g => {
-        const key = `${g.id}_${exportDate}_عام`;
+        const key = `${g.id}_${exportDate}_Genel`;
         const rec = state.attendanceData[key];
-        const status = rec ? (rec.status === 'حاضر' ? '\u2713' : '\u2717') : '—';
+        const status = rec ? (rec.status === 'Var' ? '\u2713' : '\u2717') : '\u2014';
         wsData.push([g.name, status]);
       });
 
-      const totalPresent = exportAtt.filter(a => a.status === 'حاضر').length;
-      const totalAbsent = exportAtt.filter(a => a.status === 'غائب').length;
+      const totalPresent = exportAtt.filter(a => a.status === 'Var').length;
+      const totalAbsent = exportAtt.filter(a => a.status === 'Yok').length;
       wsData.push([]);
-      wsData.push(['', '', 'حاضر: ' + totalPresent, '', 'غائب: ' + totalAbsent, '']);
+      wsData.push(['', '', 'Var: ' + totalPresent, '', 'Yok: ' + totalAbsent, '']);
 
       const ws = XLSX.utils.aoa_to_sheet(wsData);
       ws['!cols'] = [{ wch: 28 }, { wch: 14 }, { wch: 10 }, { wch: 10 }, { wch: 10 }, { wch: 10 }];
-      ws['!dir'] = 'rtl';
-      XLSX.utils.book_append_sheet(wb, ws, 'يوم ' + exportDate);
+      ws['!dir'] = 'ltr';
+      XLSX.utils.book_append_sheet(wb, ws, exportDate + ' Gunu');
     }
 
     const xlsxBlob = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
@@ -2402,12 +2374,12 @@ if (DOM.exportCSV) {
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `حضور_${exportDate}${exportMode === 'month' ? '_شهر' : '_يوم'}.xlsx`;
+    a.download = `Yoklama_${exportDate}${exportMode === 'month' ? '_Ay' : '_Gun'}.xlsx`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    showToast(exportMode === 'month' ? 'تم تصدير ملف Excel للشهر' : 'تم تصدير ملف Excel لليوم', 'success');
+    showToast(exportMode === 'month' ? 'Aylik Excel dosyasi olusturuldu' : 'Gunluk Excel dosyasi olusturuldu', 'success');
   });
 }
 
@@ -2426,8 +2398,8 @@ if (DOM.exportJSON) {
       attendance: exportAtt,
       exportedAt: new Date().toISOString()
     };
-    downloadFile(`بيانات_${exportDate}.json`, JSON.stringify(payload, null, 2), 'application/json');
-    showToast('تم تصدير JSON', 'success');
+    downloadFile(`Veriler_${exportDate}.json`, JSON.stringify(payload, null, 2), 'application/json');
+    showToast('JSON olusturuldu', 'success');
   });
 }
 
@@ -2453,8 +2425,8 @@ if (DOM.exportPrint) {
     );
 
     const activeGirls = state.girls.filter(g => !g.isDeleted);
-    const totalPresent = exportAtt.filter(a => a.status === 'حاضر').length;
-    const totalAbsent = exportAtt.filter(a => a.status === 'غائب').length;
+    const totalPresent = exportAtt.filter(a => a.status === 'Var').length;
+    const totalAbsent = exportAtt.filter(a => a.status === 'Yok').length;
 
     let html;
 
@@ -2467,11 +2439,11 @@ if (DOM.exportPrint) {
           const g = state.girls.find(x => x.id === a.girlId);
           grouped[a.girlId] = { name: g?.name || '', totalPresent: 0, totalAbsent: 0 };
         }
-        if (a.status === 'حاضر') grouped[a.girlId].totalPresent++;
+        if (a.status === 'Var') grouped[a.girlId].totalPresent++;
         else grouped[a.girlId].totalAbsent++;
       });
 
-      const sortedGirls = Object.values(grouped).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+      const sortedGirls = Object.values(grouped).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
 
       const rows = sortedGirls.map((r, i) => {
         return `<tr>
@@ -2482,47 +2454,47 @@ if (DOM.exportPrint) {
         </tr>`;
       }).join('');
 
-      html = `<!DOCTYPE html><html lang="ar" dir="rtl">
-        <head><meta charset="UTF-8"><title>تقرير شهر ${monthName}</title>
-        <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
-        <style>body{font-family:Tajawal,sans-serif;direction:rtl;padding:20px}
-        h1{color:#1a2744;border-bottom:2px solid #1a2744;padding-bottom:10px}
+      html = `<!DOCTYPE html><html lang="tr" dir="ltr">
+        <head><meta charset="UTF-8"><title>${monthName} Ayi Raporu</title>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+        <style>body{font-family:Poppins,sans-serif;direction:ltr;padding:20px}
+        h1{color:#1B3A5C;border-bottom:2px solid #C8102E;padding-bottom:10px}
         .summary{display:flex;gap:20px;margin:15px 0;flex-wrap:wrap}
         .sum-box{background:#f0f2f8;border-radius:10px;padding:12px 20px;text-align:center}
-        .sum-box b{font-size:24px;color:#1a2744}
+        .sum-box b{font-size:24px;color:#1B3A5C}
         .sum-box span{font-size:13px;color:#6b7a99}
         table{width:100%;border-collapse:collapse;margin-top:20px}
         th,td{border:1px solid #ddd;padding:8px;text-align:center;font-size:13px}
-        th{background:#1a2744;color:white}
+        th{background:#1B3A5C;color:white}
         .footer{margin-top:20px;font-size:12px;color:#6b7a99;border-top:1px solid #e2e8f0;padding-top:10px}
         @media print{body{padding:10px}}
         </style></head><body>
-        <h1>تقرير حضور شهر ${monthName}</h1>
-        <p style="color:#6b7a99;font-size:14px">الفترة: من ${exportStart} الى ${exportEnd}</p>
+        <h1>${monthName} Ayi Devam Raporu</h1>
+        <p style="color:#6b7a99;font-size:14px">Donem: ${exportStart} - ${exportEnd}</p>
         <div class="summary">
-          <div class="sum-box"><b>${activeGirls.length}</b><br><span>عدد الموظفين</span></div>
-          <div class="sum-box"><b>${totalPresent}</b><br><span>اجمالي الحضور</span></div>
-          <div class="sum-box"><b>${totalAbsent}</b><br><span>اجمالي الغياب</span></div>
-          <div class="sum-box"><b>${sortedGirls.length}</b><br><span>موظفين مشاركين</span></div>
+          <div class="sum-box"><b>${activeGirls.length}</b><br><span>Calisan Sayisi</span></div>
+          <div class="sum-box"><b>${totalPresent}</b><br><span>Toplam Devam</span></div>
+          <div class="sum-box"><b>${totalAbsent}</b><br><span>Toplam Devamsizlik</span></div>
+          <div class="sum-box"><b>${sortedGirls.length}</b><br><span>Katilimci Calisan</span></div>
         </div>
         <table>
-          <tr><th>#</th><th>الاسم</th><th>اجمالي الحضور</th><th>اجمالي الغياب</th></tr>
+          <tr><th>#</th><th>Ad Soyad</th><th>Toplam Devam</th><th>Toplam Devamsizlik</th></tr>
           ${rows}
         </table>
-        <div class="footer">تاريخ التصدير: ${new Date().toLocaleDateString('ar-EG')} | نظام الحضور والغياب</div>
+        <div class="footer">Aktarim tarihi: ${new Date().toLocaleDateString('tr-TR')} | Yoklama Sistemi</div>
         </body></html>`;
 
     } else {
       const dayName = DAY_NAMES[new Date(exportDate + 'T00:00:00').getDay()] || '';
 
-      const sortedGirls = state.girls.filter(g => !g.isDeleted).sort((a, b) => a.name.localeCompare(b.name, 'ar'));
+      const sortedGirls = state.girls.filter(g => !g.isDeleted).sort((a, b) => a.name.localeCompare(b.name, 'tr'));
 
       const rows = sortedGirls.map((g, i) => {
-        const key = `${g.id}_${exportDate}_عام`;
+        const key = `${g.id}_${exportDate}_Genel`;
         const rec = state.attendanceData[key];
         const statusCell = rec
-          ? (rec.status === 'حاضر' ? '<td style="color:green;font-weight:700;font-size:16px">\u2713</td>' : '<td style="color:red;font-weight:700;font-size:16px">\u2717</td>')
-          : '<td style="color:#ccc">—</td>';
+          ? (rec.status === 'Var' ? '<td style="color:green;font-weight:700;font-size:16px">\u2713</td>' : '<td style="color:red;font-weight:700;font-size:16px">\u2717</td>')
+          : '<td style="color:#ccc">\u2014</td>';
         return `<tr>
           <td>${i + 1}</td>
           <td>${esc(g.name)}</td>
@@ -2530,38 +2502,38 @@ if (DOM.exportPrint) {
         </tr>`;
       }).join('');
 
-      html = `<!DOCTYPE html><html lang="ar" dir="rtl">
-        <head><meta charset="UTF-8"><title>تقرير يوم ${exportDate}</title>
-        <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
-        <style>body{font-family:Tajawal,sans-serif;direction:rtl;padding:20px}
-        h1{color:#1a2744;border-bottom:2px solid #1a2744;padding-bottom:10px}
+      html = `<!DOCTYPE html><html lang="tr" dir="ltr">
+        <head><meta charset="UTF-8"><title>${exportDate} Gunu Raporu</title>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
+        <style>body{font-family:Poppins,sans-serif;direction:ltr;padding:20px}
+        h1{color:#1B3A5C;border-bottom:2px solid #C8102E;padding-bottom:10px}
         .summary{display:flex;gap:20px;margin:15px 0;flex-wrap:wrap}
         .sum-box{background:#f0f2f8;border-radius:10px;padding:12px 20px;text-align:center}
-        .sum-box b{font-size:24px;color:#1a2744}
+        .sum-box b{font-size:24px;color:#1B3A5C}
         .sum-box span{font-size:13px;color:#6b7a99}
         table{width:100%;border-collapse:collapse;margin-top:20px}
         th,td{border:1px solid #ddd;padding:10px;text-align:center;font-size:14px}
-        th{background:#1a2744;color:white}
+        th{background:#1B3A5C;color:white}
         .footer{margin-top:20px;font-size:12px;color:#6b7a99;border-top:1px solid #e2e8f0;padding-top:10px}
         @media print{body{padding:10px}}
         </style></head><body>
-        <h1>تقرير حضور يوم ${exportDate}</h1>
-        <p style="color:#6b7a99;font-size:14px">اليوم: ${dayName}</p>
+        <h1>${exportDate} Gunu Devam Raporu</h1>
+        <p style="color:#6b7a99;font-size:14px">Gun: ${dayName}</p>
         <div class="summary">
-          <div class="sum-box"><b>${activeGirls.length}</b><br><span>عدد الموظفين</span></div>
-          <div class="sum-box"><b>${totalPresent}</b><br><span>حاضر</span></div>
-          <div class="sum-box"><b>${totalAbsent}</b><br><span>غائب</span></div>
+          <div class="sum-box"><b>${activeGirls.length}</b><br><span>Calisan Sayisi</span></div>
+          <div class="sum-box"><b>${totalPresent}</b><br><span>Var</span></div>
+          <div class="sum-box"><b>${totalAbsent}</b><br><span>Yok</span></div>
         </div>
         <table>
-          <tr><th>#</th><th>الاسم</th><th>الحالة</th></tr>
+          <tr><th>#</th><th>Ad Soyad</th><th>Durum</th></tr>
           ${rows}
         </table>
-        <div class="footer">تاريخ التصدير: ${new Date().toLocaleDateString('ar-EG')} | نظام الحضور والغياب</div>
+        <div class="footer">Aktarim tarihi: ${new Date().toLocaleDateString('tr-TR')} | Yoklama Sistemi</div>
         </body></html>`;
     }
 
     const w = window.open('', '_blank');
-    if (!w) { showToast('تم حجب النافذة من المتصفح', 'error'); return; }
+    if (!w) { showToast('Pencere tarayici tarafindan engellendi', 'error'); return; }
     w.document.write(html);
     w.document.close();
     w.print();
@@ -2579,7 +2551,7 @@ function downloadFile(filename, content, mimeType) {
 }
 
 // ============================================================
-// MODAL HELPERS
+// MODAL YARDIMCILARI
 // ============================================================
 function openModal(id) {
   if (!DOM[id]) return;
@@ -2594,11 +2566,11 @@ function closeModal(id) {
 }
 
 // ============================================================
-// CONFIRM MODAL
+// ONAY MODAL
 // ============================================================
 let confirmResolve = null;
 
-function showConfirm({ icon = '&#9888;', title, msg, okLabel = 'تأكيد', okClass = '', onOk }) {
+function showConfirm({ icon = '&#9888;', title, msg, okLabel = 'Onayla', okClass = '', onOk }) {
   if (DOM.confirmIcon) DOM.confirmIcon.innerHTML = icon;
   if (DOM.confirmTitle) DOM.confirmTitle.textContent = title;
   if (DOM.confirmMsg) DOM.confirmMsg.textContent = msg;
@@ -2618,7 +2590,7 @@ if (DOM.confirmOk) {
     if (confirmResolve) {
       const fn = confirmResolve;
       confirmResolve = null;
-      try { await fn(); } catch (e) { console.error('Confirm ok error:', e); }
+      try { await fn(); } catch (e) { console.error('Onay hatasi:', e); }
     }
   });
 }
@@ -2649,7 +2621,7 @@ $$('.modal-overlay').forEach(overlay => overlay.addEventListener('click', e => {
 }));
 
 // ============================================================
-// EVENT DELEGATION
+// OLAY TEMSILCILIGI
 // ============================================================
 function setupDelegation() {
   if (DOM.needsFollowup) {
@@ -2742,7 +2714,7 @@ function setupDelegation() {
   }
 }
 
-// Girls search
+// Calisan arama
 const girlsSearchInput = document.getElementById('girlsSearch');
 if (girlsSearchInput) {
   let girlsSearchTimer = null;
@@ -2758,42 +2730,42 @@ if (girlsSearchInput) {
 setupDelegation();
 
 // ============================================================
-// BOOTSTRAP — Fixed with proper error handling
+// BASLATMA
 // ============================================================
 async function bootstrap() {
   initDarkMode();
 
-  // Initialize IndexedDB first (always, even without Firebase)
+  // IndexedDB'yi ilk olarak baslat (Firebase olmadan bile)
   try {
     await IDB.init();
     state.idb = true;
   } catch (e) {
-    console.warn('IndexedDB init failed:', e);
+    console.warn('IndexedDB baslatma hatasi:', e);
     state.idb = false;
   }
 
-  // Initialize offline sync queue
+  // Cevrimdisi senkronizasyon kuyrugunu baslat
   try {
     await OfflineQueue.init();
   } catch (e) {
-    console.warn('OfflineQueue init failed:', e);
+    console.warn('OfflineQueue baslatma hatasi:', e);
   }
 
-  // Initialize timestamp toggle UI
+  // Zaman dilimi arayuzunu baslat
   initTimestampToggle();
 
-  // Set initial online status
+  // Cevrimici durumunu ayarla
   updateOnlineStatus();
 
-  // Initialize Firebase modules
+  // Firebase modullerini baslat
   const modulesReady = await initModules();
 
   if (modulesReady) {
     await initAuth();
-    // Try syncing any pending operations from previous offline sessions
+    // Onceki cevrimdisi oturumlardan bekleyen islemleri senkronize etmeyi dene
     OfflineQueue.trySync();
   } else {
-    console.error('Firebase failed to load');
+    console.error('Firebase yuklenemedi');
     hideSplash();
     showLogin();
   }

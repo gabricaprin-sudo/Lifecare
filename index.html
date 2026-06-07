@@ -1,15 +1,15 @@
 <!DOCTYPE html>
-<html lang="ar" dir="rtl">
+<html lang="tr" dir="ltr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="theme-color" content="#0F2B5B">
-  <title>نظام الحضور والغياب</title>
+  <meta name="theme-color" content="#C8102E">
+  <title>Yoklama Sistemi</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;700&family=Noto+Naskh+Arabic:wght@400;600&family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <base target="_blank">
 </head>
@@ -18,43 +18,80 @@
     <!-- Splash Screen -->
     <div id="splash" class="splash">
       <div class="splash-content">
-        <div class="splash-cross">&#127970;</div>
-        <h1>نظام الحضور والغياب</h1>
-        <p>نظام إدارة الموارد البشرية</p>
+        <div class="splash-icon">
+          <svg viewBox="0 0 100 100" width="80" height="80">
+            <defs>
+              <linearGradient id="sg" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" style="stop-color:#FFD700"/>
+                <stop offset="100%" style="stop-color:#FFA500"/>
+              </linearGradient>
+            </defs>
+            <circle cx="50" cy="50" r="45" fill="none" stroke="url(#sg)" stroke-width="2" opacity="0.3"/>
+            <circle cx="50" cy="50" r="35" fill="none" stroke="url(#sg)" stroke-width="1.5" opacity="0.2"/>
+            <circle cx="50" cy="50" r="25" fill="none" stroke="url(#sg)" stroke-width="1" opacity="0.15"/>
+            <text x="50" y="58" text-anchor="middle" font-size="32" fill="url(#sg)">&#9733;</text>
+          </svg>
+        </div>
+        <h1>Yoklama Sistemi</h1>
+        <p>Personel Devam Takip Sistemi</p>
         <div class="splash-loader"><div></div></div>
       </div>
     </div>
 
     <!-- Login Screen -->
     <div id="loginScreen" class="screen hidden">
-      <div class="login-bg"></div>
-
-      <!-- Hero Image -->
-      <div class="login-hero">
-        <img
-          src="https://i.ibb.co/Hf86pKxc/d041aaef2c786ed113ab887ce89a3b0060f9df0b8895f4103b871fc88b5e9e4b.png"
-          alt="Factory"
-          class="login-hero-img"
-          fetchpriority="high"
-          width="640"
-          height="381"
-        >
-        <div class="login-gradient-bridge"></div>
+      <div class="login-bg">
+        <!-- Animated geometric pattern overlay -->
+        <div class="login-pattern-overlay">
+          <div class="geo-ring r1"></div>
+          <div class="geo-ring r2"></div>
+          <div class="geo-ring r3"></div>
+          <div class="geo-ring r4"></div>
+        </div>
+        <!-- Floating particles -->
+        <div class="particles">
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+          <span></span><span></span><span></span><span></span><span></span>
+        </div>
       </div>
 
-      <!-- White Content Card -->
-      <div class="login-card" id="loginCard">
-        <div class="login-cross-icon">&#127970;</div>
-        <div class="login-church-name">شركة الصناعة المتقدمة</div>
-        <div class="login-system-title">الالتزام والانضباط اساس نجاح العمل</div>
-        <div class="login-divider"></div>
-        <div class="login-welcome">نظام متابعة حضور وغياب العاملين</div>
+      <!-- Login Content -->
+      <div class="login-content">
+        <!-- Top decorative element -->
+        <div class="login-top-decor">
+          <div class="star-burst">
+            <svg viewBox="0 0 100 100" width="60" height="60">
+              <defs>
+                <linearGradient id="sg2" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" style="stop-color:#FFD700"/>
+                  <stop offset="100%" style="stop-color:#FFA500"/>
+                </linearGradient>
+              </defs>
+              <circle cx="50" cy="50" r="46" fill="none" stroke="url(#sg2)" stroke-width="1.5" opacity="0.4"/>
+              <circle cx="50" cy="50" r="38" fill="none" stroke="url(#sg2)" stroke-width="1" opacity="0.25"/>
+              <text x="50" y="60" text-anchor="middle" font-size="40" fill="url(#sg2)">&#9733;</text>
+            </svg>
+          </div>
+          <div class="glow-line"></div>
+        </div>
 
-        <button id="googleSignIn" class="btn-google">
-          <svg class="google-logo" width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
-          <span class="btn-spinner"></span>
-          <span class="btn-text">تسجيل الدخول بـ Google</span>
-        </button>
+        <!-- White Card -->
+        <div class="login-card" id="loginCard">
+          <div class="login-brand">
+            <div class="login-brand-icon">&#9733;</div>
+            <div class="login-brand-name">Gelisim Endustri</div>
+          </div>
+          <div class="login-motto">Disiplin ve Sorumluluk, Basarinin Temelidir</div>
+          <div class="login-divider"><span></span></div>
+          <div class="login-welcome">Personel Yoklama Takip Sistemi</div>
+
+          <button id="googleSignIn" class="btn-google">
+            <svg class="google-logo" width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+            <span class="btn-spinner"></span>
+            <span class="btn-text">Google ile Giris Yap</span>
+          </button>
+        </div>
       </div>
     </div>
 
@@ -62,49 +99,49 @@
     <div id="mainApp" class="hidden">
       <!-- Header -->
       <header class="app-header">
-        <div class="header-right">
-          <button class="menu-btn" id="menuBtn" aria-label="القائمة">&#9776;</button>
+        <div class="header-left">
+          <button class="menu-btn" id="menuBtn" aria-label="Menu">&#9776;</button>
           <div class="header-titles">
-            <h1 id="pageTitle">الرئيسية</h1>
+            <h1 id="pageTitle">Ana Sayfa</h1>
             <span id="pageSubtitle" class="page-subtitle"></span>
           </div>
         </div>
-        <div class="header-left">
-          <div class="offline-badge-header hidden" id="offlineBadgeHeader" title="وضع عدم الاتصال - العمليات سيُحفظ محلياً وتُرفع عند عودة النت">
+        <div class="header-right">
+          <div class="offline-badge-header hidden" id="offlineBadgeHeader" title="Cevrimdisi mod - Islemler yerel olarak kaydedilir ve internet dondugunde senkronize edilir">
             <span>&#9888;</span> Offline
           </div>
-          <div class="avatar" id="userAvatar">خ</div>
+          <div class="avatar" id="userAvatar">K</div>
         </div>
       </header>
 
       <!-- Side Drawer -->
       <div class="drawer-overlay" id="drawerOverlay"></div>
-      <nav class="drawer" id="drawer" aria-label="القائمة الرئيسية">
+      <nav class="drawer" id="drawer" aria-label="Ana Menu">
         <div class="drawer-header">
-          <div class="drawer-avatar" id="drawerAvatar">خ</div>
+          <div class="drawer-avatar" id="drawerAvatar">K</div>
           <div class="drawer-user-info">
-            <span id="drawerUserName">المستخدم</span>
+            <span id="drawerUserName">Kullanici</span>
             <span id="drawerUserEmail" class="drawer-email">user@gmail.com</span>
           </div>
         </div>
         <ul class="drawer-menu">
-          <li><a href="#" data-page="home" class="menu-item active"><span>&#127968;</span> الرئيسية</a></li>
-          <li><a href="#" data-page="attendance" class="menu-item"><span>&#128203;</span> تسجيل الحضور</a></li>
-          <li><a href="#" data-page="girls" class="menu-item"><span>&#128101;</span> الموظفين</a></li>
-          <li><a href="#" data-page="calendar" class="menu-item"><span>&#128197;</span> التقويم</a></li>
-          <li><a href="#" data-page="stats" class="menu-item"><span>&#128202;</span> التقارير</a></li>
-          <li><a href="#" data-page="history" class="menu-item"><span>&#128220;</span> السجل</a></li>
-          <li><a href="#" data-page="export" class="menu-item"><span>&#128228;</span> التصدير</a></li>
+          <li><a href="#" data-page="home" class="menu-item active"><span>&#127968;</span> Ana Sayfa</a></li>
+          <li><a href="#" data-page="attendance" class="menu-item"><span>&#128203;</span> Yoklama Al</a></li>
+          <li><a href="#" data-page="girls" class="menu-item"><span>&#128101;</span> Calisanlar</a></li>
+          <li><a href="#" data-page="calendar" class="menu-item"><span>&#128197;</span> Takvim</a></li>
+          <li><a href="#" data-page="stats" class="menu-item"><span>&#128202;</span> Raporlar</a></li>
+          <li><a href="#" data-page="history" class="menu-item"><span>&#128220;</span> Gecmis</a></li>
+          <li><a href="#" data-page="export" class="menu-item"><span>&#128228;</span> Disari Aktar</a></li>
           <li class="drawer-divider"></li>
-          <li><a href="#" id="signOutBtn" class="menu-item sign-out"><span>&#128682;</span> تسجيل الخروج</a></li>
+          <li><a href="#" id="signOutBtn" class="menu-item sign-out"><span>&#128682;</span> Cikis Yap</a></li>
         </ul>
         <!-- Dark Mode Toggle -->
         <div class="dark-mode-toggle" id="darkModeToggle">
-          <span>&#127769;</span> الوضع الداكن
+          <span>&#127769;</span> Koyu Mod
           <div class="dark-toggle-switch" id="darkToggleSwitch"></div>
         </div>
         <div class="offline-badge" id="offlineBadge">
-          <span>&#9888;</span> انت في وضع عدم الاتصال. سيتم مزامنة البيانات عند عودة الانترنت.
+          <span>&#9888;</span> Cevrimdisi moddasiniz. Veriler internet dondugunde senkronize edilecektir.
         </div>
       </nav>
 
@@ -114,13 +151,13 @@
         <!-- HOME PAGE -->
         <div id="page-home" class="page active">
           <div class="search-bar-wrap">
-            <input type="text" id="globalSearch" class="search-bar" placeholder="&#128269; ابحث عن موظف..." autocomplete="off">
+            <input type="text" id="globalSearch" class="search-bar" placeholder="&#128269; Calisan ara..." autocomplete="off">
           </div>
           <div id="searchResults" class="search-results"></div>
 
           <div class="today-card">
             <div class="today-info">
-              <span class="today-label">اليوم</span>
+              <span class="today-label">Bugun</span>
               <span id="todayDay" class="today-day">---</span>
               <span id="todayDate" class="today-date">---</span>
             </div>
@@ -130,55 +167,55 @@
           <div class="stats-grid">
             <div class="stat-card blue">
               <div class="stat-num" id="statTotal">0</div>
-              <div class="stat-label">اجمالي الموظفين</div>
+              <div class="stat-label">Toplam Calisan</div>
             </div>
             <div class="stat-card green">
               <div class="stat-num" id="statPresentToday">0</div>
-              <div class="stat-label">الحاضرين اليوم</div>
+              <div class="stat-label">Bugun Var</div>
             </div>
             <div class="stat-card orange">
               <div class="stat-num" id="statAbsentToday">0</div>
-              <div class="stat-label">الغائبين اليوم</div>
+              <div class="stat-label">Bugun Yok</div>
             </div>
           </div>
 
-          <div class="section-title">الاكثر حضوراً هذا الشهر</div>
+          <div class="section-title">Ayin En Cok Gelenleri</div>
           <div id="topAttendees" class="top-list"></div>
 
-          <div class="section-title">يحتاجون متابعة</div>
+          <div class="section-title">Takip Gerektirenler</div>
           <div id="needsFollowup" class="followup-list"></div>
         </div>
 
         <!-- ATTENDANCE PAGE -->
         <div id="page-attendance" class="page">
           <div class="day-selector">
-            <button class="day-btn" data-day="السبت">السبت</button>
-            <button class="day-btn" data-day="الأحد">الأحد</button>
-            <button class="day-btn" data-day="الاثنين">الاثنين</button>
-            <button class="day-btn" data-day="الثلاثاء">الثلاثاء</button>
-            <button class="day-btn" data-day="الأربعاء">الأربعاء</button>
-            <button class="day-btn" data-day="الخميس">الخميس</button>
+            <button class="day-btn" data-day="Cumartesi">Cmt</button>
+            <button class="day-btn" data-day="Pazar">Paz</button>
+            <button class="day-btn" data-day="Pazartesi">Pzt</button>
+            <button class="day-btn" data-day="Sali">Sal</button>
+            <button class="day-btn" data-day="Carsamba">Crs</button>
+            <button class="day-btn" data-day="Persembe">Prs</button>
           </div>
           <div class="date-input-wrap">
-            <label for="attendanceDate">التاريخ:</label>
+            <label for="attendanceDate">Tarih:</label>
             <input type="date" id="attendanceDate" class="date-input">
           </div>
 
           <!-- Attendance Search Bar -->
           <div class="search-bar-wrap" style="margin-top:4px;">
-            <input type="text" id="attendanceSearch" class="search-bar" placeholder="&#128269; ابحث في الحضور..." autocomplete="off">
+            <input type="text" id="attendanceSearch" class="search-bar" placeholder="&#128269; Yoklamada ara..." autocomplete="off">
           </div>
 
           <div class="attendance-summary" id="attendanceSummary">
-            <span class="summ-item green-text">&#10003; <span id="presentCount">0</span> حاضر</span>
-            <span class="summ-item red-text">&#10007; <span id="absentCount">0</span> غائب</span>
-            <span class="summ-item gray-text"><span id="totalCount">0</span> اجمالي</span>
+            <span class="summ-item green-text">&#10003; <span id="presentCount">0</span> Var</span>
+            <span class="summ-item red-text">&#10007; <span id="absentCount">0</span> Yok</span>
+            <span class="summ-item gray-text"><span id="totalCount">0</span> Toplam</span>
           </div>
           <div class="quick-actions" id="quickActions">
-            <button class="quick-action-btn all-present" id="selectAllPresent">&#10003; تحديد الكل حاضر</button>
-            <button class="quick-action-btn all-absent" id="selectAllAbsent">&#10007; تحديد الكل غائب</button>
+            <button class="quick-action-btn all-present" id="selectAllPresent">&#10003; Tumu Var</button>
+            <button class="quick-action-btn all-absent" id="selectAllAbsent">&#10007; Tumu Yok</button>
           </div>
-          <div class="att-toggle-hint" id="attToggleHint">&#128161; اضغط للتبديل بين حاضر/غائب &middot; اضغط مطولاً للتفاصيل &middot; اضغط نجمة للتقييم</div>
+          <div class="att-toggle-hint" id="attToggleHint">&#128161; Gecmek icin tikla &middot; Detay icin uzun bas &middot; Degerlendirme icin yildiza tikla</div>
           <div id="attendanceList" class="attendance-list"></div>
         </div>
 
@@ -186,10 +223,10 @@
         <div id="page-girls" class="page">
           <!-- Search bar for finding girls to edit/delete -->
           <div class="search-bar-wrap" style="margin-bottom:4px;">
-            <input type="text" id="girlsSearch" class="search-bar" placeholder="&#128269; ابحث عن موظف للتعديل او الحذف..." autocomplete="off">
+            <input type="text" id="girlsSearch" class="search-bar" placeholder="&#128269; Duzenleme veya silme icin calisan ara..." autocomplete="off">
           </div>
           <div class="girls-filter-row">
-            <button class="btn-add-girl" id="addGirlBtn">+ اضافة</button>
+            <button class="btn-add-girl" id="addGirlBtn">+ Ekle</button>
           </div>
           <div id="girlsList" class="girls-list"></div>
         </div>
@@ -197,9 +234,9 @@
         <!-- CALENDAR PAGE -->
         <div id="page-calendar" class="page">
           <div class="calendar-nav">
-            <button class="cal-nav-btn" id="calPrev" aria-label="الشهر السابق">&#9664;</button>
+            <button class="cal-nav-btn" id="calPrev" aria-label="Onceki Ay">&#9664;</button>
             <span id="calMonthYear" class="cal-month-title">---</span>
-            <button class="cal-nav-btn" id="calNext" aria-label="الشهر التالي">&#9654;</button>
+            <button class="cal-nav-btn" id="calNext" aria-label="Sonraki Ay">&#9654;</button>
           </div>
           <div class="calendar-grid" id="calendarGrid"></div>
           <div id="dayDetail" class="day-detail"></div>
@@ -209,21 +246,21 @@
         <div id="page-stats" class="page">
           <!-- Date picker for month + day specific stats -->
           <div class="stats-month-selector">
-            <label for="statsMonth">التاريخ:</label>
+            <label for="statsMonth">Tarih:</label>
             <input type="date" id="statsMonth" class="month-input">
           </div>
           <div class="time-filter-tabs" id="timeFilterTabs">
-            <button class="time-filter-tab" data-period="all">الكل</button>
-            <button class="time-filter-tab active" data-period="today">اليوم</button>
-            <button class="time-filter-tab" data-period="month">هذا الشهر</button>
-            <button class="time-filter-tab" data-period="year">هذه السنة</button>
+            <button class="time-filter-tab" data-period="all">Tum</button>
+            <button class="time-filter-tab active" data-period="today">Bugun</button>
+            <button class="time-filter-tab" data-period="month">Bu Ay</button>
+            <button class="time-filter-tab" data-period="year">Bu Yil</button>
           </div>
 
           <div class="big-stats-grid" id="bigStatsGrid"></div>
 
-          <div class="section-title">توزيع الغيابات</div>
+          <div class="section-title">Devamsizlik Dagilimi</div>
           <div id="absenceChart" class="absence-chart"></div>
-          <div class="section-title">ترتيب الحضور</div>
+          <div class="section-title">Devam Siralamasi</div>
           <div id="attendanceRanking" class="ranking-list"></div>
         </div>
 
@@ -231,19 +268,19 @@
         <div id="page-history" class="page">
           <div class="history-controls">
             <select id="historyFilter" class="filter-select">
-              <option value="">كل الاحداث</option>
-              <option value="اضافة">&#10133; اضافة موظف</option>
-              <option value="تعديل">&#9999; تعديل موظف</option>
-              <option value="حذف">&#10060; حذف موظف</option>
-              <option value="حضور">&#128203; تسجيل حضور</option>
+              <option value="">Tum Islemler</option>
+              <option value="Ekleme">&#10133; Calisan Ekleme</option>
+              <option value="Duzenleme">&#9999; Calisan Duzenleme</option>
+              <option value="Silme">&#10060; Calisan Silme</option>
+              <option value="Yoklama">&#128203; Yoklama Kayit</option>
             </select>
-            <button id="clearHistoryBtn" class="btn-clear-history">&#10060; مسح السجل</button>
+            <button id="clearHistoryBtn" class="btn-clear-history">&#10060; Gecmisi Temizle</button>
           </div>
           <div id="historyList" class="history-list">
-            <div class="empty-state">جارٍ التحميل...</div>
+            <div class="empty-state">Yukleniyor...</div>
           </div>
           <div id="loadMoreHistory" class="load-more-wrap hidden">
-            <button id="loadMoreHistoryBtn" class="btn-load-more">&#9660; تحميل المزيد</button>
+            <button id="loadMoreHistoryBtn" class="btn-load-more">&#9660; Daha Fazla Yukle</button>
           </div>
         </div>
 
@@ -251,42 +288,42 @@
         <div id="page-export" class="page">
           <div class="export-card">
             <div class="export-icon">&#128202;</div>
-            <h3>تصدير البيانات</h3>
+            <h3>Verileri Disari Aktar</h3>
             <div class="export-month-wrap">
-              <label for="exportMonth">التاريخ:</label>
+              <label for="exportMonth">Tarih:</label>
               <input type="date" id="exportMonth" class="month-input">
             </div>
             <!-- Export Mode Selector -->
             <div class="export-mode-wrap">
-              <label class="export-mode-label">نطاق التصدير:</label>
+              <label class="export-mode-label">Aktarim Kapsami:</label>
               <div class="export-mode-options">
                 <label class="export-mode-option">
                   <input type="radio" name="exportMode" value="day" checked>
                   <span class="mode-check"></span>
-                  <span class="mode-text">يوم محدد</span>
+                  <span class="mode-text">Belirli Gun</span>
                 </label>
                 <label class="export-mode-option">
                   <input type="radio" name="exportMode" value="month">
                   <span class="mode-check"></span>
-                  <span class="mode-text">الشهر كامل</span>
+                  <span class="mode-text">Tam Ay</span>
                 </label>
               </div>
             </div>
             <div class="export-hint">
-              <span>&#128161;</span> "يوم محدد" = تقرير يومي (&#10003; حاضر / &#10007; غايب) &nbsp;|&nbsp; "الشهر كامل" = تقرير ارقام (احصائيات)
+              <span>&#128161;</span> "Belirli Gun" = Gunluk rapor (&#10003; Var / &#10007; Yok) &nbsp;|&nbsp; "Tam Ay" = Istatistik raporu
             </div>
             <div class="export-btns">
               <button class="export-btn csv" id="exportCSV">
                 <span>&#128196;</span>
-                <div><b>تصدير Excel</b><small>حاضر = &#10003; | غائب = X</small></div>
+                <div><b>Excel'e Aktar</b><small>Var = &#10003; | Yok = X</small></div>
               </button>
               <button class="export-btn json" id="exportJSON">
                 <span>&#128190;</span>
-                <div><b>تصدير JSON</b><small>بيانات كاملة</small></div>
+                <div><b>JSON'a Aktar</b><small>Tum veriler</small></div>
               </button>
               <button class="export-btn print" id="exportPrint">
                 <span>&#128424;</span>
-                <div><b>تقرير للطباعة</b><small>PDF قابل للطباعة</small></div>
+                <div><b>Yazdir</b><small>Yazdirilabilir rapor</small></div>
               </button>
             </div>
           </div>
@@ -295,12 +332,12 @@
       </main>
 
       <!-- Bottom Nav -->
-      <nav class="bottom-nav" aria-label="التنقل السفلي">
-        <button class="nav-btn active" data-page="home" aria-label="الرئيسية"><span>&#127968;</span><label>الرئيسية</label></button>
-        <button class="nav-btn" data-page="attendance" aria-label="الحضور"><span>&#128203;</span><label>الحضور</label></button>
-        <button class="nav-btn" data-page="girls" aria-label="الموظفين"><span>&#128101;</span><label>الموظفين</label></button>
-        <button class="nav-btn" data-page="calendar" aria-label="التقويم"><span>&#128197;</span><label>التقويم</label></button>
-        <button class="nav-btn" data-page="stats" aria-label="احصائيات"><span>&#128202;</span><label>احصائيات</label></button>
+      <nav class="bottom-nav" aria-label="Alt Navigasyon">
+        <button class="nav-btn active" data-page="home" aria-label="Ana Sayfa"><span>&#127968;</span><label>Ana Sayfa</label></button>
+        <button class="nav-btn" data-page="attendance" aria-label="Yoklama"><span>&#128203;</span><label>Yoklama</label></button>
+        <button class="nav-btn" data-page="girls" aria-label="Calisanlar"><span>&#128101;</span><label>Calisanlar</label></button>
+        <button class="nav-btn" data-page="calendar" aria-label="Takvim"><span>&#128197;</span><label>Takvim</label></button>
+        <button class="nav-btn" data-page="stats" aria-label="Istatistik"><span>&#128202;</span><label>Rapor</label></button>
       </nav>
     </div>
 
@@ -308,52 +345,52 @@
     <div class="modal-overlay" id="girlModal" role="dialog" aria-modal="true" aria-labelledby="girlModalTitle">
       <div class="modal">
         <div class="modal-header">
-          <h3 id="girlModalTitle">اضافة موظف</h3>
-          <button class="modal-close" id="closeGirlModal" aria-label="اغلاق">&#10005;</button>
+          <h3 id="girlModalTitle">Calisan Ekle</h3>
+          <button class="modal-close" id="closeGirlModal" aria-label="Kapat">&#10005;</button>
         </div>
         <div class="modal-body">
           <div class="form-group">
-            <label for="girlName">الاسم الكامل *</label>
-            <input type="text" id="girlName" class="form-input" placeholder="اسم الموظف" autocomplete="off">
+            <label for="girlName">Ad Soyad *</label>
+            <input type="text" id="girlName" class="form-input" placeholder="Calisan adi" autocomplete="off">
           </div>
           <div class="form-group">
-            <label for="girlPhone">رقم الهاتف</label>
-            <input type="tel" id="girlPhone" class="form-input" placeholder="رقم التليفون" dir="ltr">
+            <label for="girlPhone">Telefon</label>
+            <input type="tel" id="girlPhone" class="form-input" placeholder="Telefon numarasi" dir="ltr">
           </div>
-          <input type="hidden" id="girlGrade" value="موظف">
+          <input type="hidden" id="girlGrade" value="Calisan">
           <div class="timestamp-section">
             <div class="timestamp-header">
-              <label class="timestamp-label">&#9200; وقت التسجيل</label>
+              <label class="timestamp-label">&#9200; Kayit Zamani</label>
               <div class="timestamp-toggle" id="timestampToggle">
-                <span class="ts-option" data-mode="auto">تلقائي</span>
-                <span class="ts-option active" data-mode="manual">يدوي</span>
+                <span class="ts-option" data-mode="auto">Oto</span>
+                <span class="ts-option active" data-mode="manual">Manuel</span>
               </div>
             </div>
             <div class="timestamp-inputs" id="timestampInputs">
               <div class="ts-row">
                 <div class="ts-field">
-                  <label for="girlDate">التاريخ</label>
+                  <label for="girlDate">Tarih</label>
                   <input type="date" id="girlDate" class="form-input" dir="ltr">
                 </div>
                 <div class="ts-field">
-                  <label for="girlTime">الوقت</label>
+                  <label for="girlTime">Saat</label>
                   <input type="time" id="girlTime" class="form-input" dir="ltr">
                 </div>
               </div>
             </div>
             <div class="timestamp-auto-msg" id="timestampAutoMsg" style="display:none;">
-              <span>&#9989; سيتم تسجيل التاريخ والوقت الحالي تلقائياً</span>
+              <span>&#9989; Tarih ve saat otomatik kaydedilecektir</span>
             </div>
           </div>
           <div class="form-group">
-            <label for="girlNotes">ملاحظات</label>
-            <textarea id="girlNotes" class="form-input" rows="3" placeholder="اي ملاحظات..."></textarea>
+            <label for="girlNotes">Notlar</label>
+            <textarea id="girlNotes" class="form-input" rows="3" placeholder="Notlariniz..."></textarea>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn-danger hidden" id="deleteGirlBtn">&#128465; حذف</button>
-          <button class="btn-cancel" id="cancelGirlModal">&#10005; الغاء</button>
-          <button class="btn-primary" id="saveGirlBtn">&#128190; حفظ</button>
+          <button class="btn-danger hidden" id="deleteGirlBtn">&#128465; Sil</button>
+          <button class="btn-cancel" id="cancelGirlModal">&#10005; Iptal</button>
+          <button class="btn-primary" id="saveGirlBtn">&#128190; Kaydet</button>
         </div>
       </div>
     </div>
@@ -362,11 +399,11 @@
     <div class="confirm-overlay" id="confirmOverlay" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
       <div class="confirm-box">
         <div class="confirm-icon" id="confirmIcon">&#9888;</div>
-        <div class="confirm-title" id="confirmTitle">تأكيد</div>
+        <div class="confirm-title" id="confirmTitle">Onayla</div>
         <div class="confirm-msg" id="confirmMsg"></div>
         <div class="confirm-actions">
-          <button class="confirm-cancel" id="confirmCancel">&#10005; الغاء</button>
-          <button class="confirm-ok" id="confirmOk">&#10003; تأكيد</button>
+          <button class="confirm-cancel" id="confirmCancel">&#10005; Iptal</button>
+          <button class="confirm-ok" id="confirmOk">&#10003; Onayla</button>
         </div>
       </div>
     </div>
@@ -375,13 +412,13 @@
     <div class="modal-overlay" id="girlProfileModal" role="dialog" aria-modal="true" aria-labelledby="profileName">
       <div class="modal modal-large">
         <div class="modal-header">
-          <h3 id="profileName">ملف الموظف</h3>
-          <button class="modal-close" id="closeProfileModal" aria-label="اغلاق">&#10005;</button>
+          <h3 id="profileName">Calisan Profili</h3>
+          <button class="modal-close" id="closeProfileModal" aria-label="Kapat">&#10005;</button>
         </div>
         <div class="modal-body" id="profileBody"></div>
         <div class="modal-footer">
-          <button class="btn-share" id="shareProfileBtn">&#128239; مشاركة</button>
-          <button class="btn-primary" id="editProfileBtn">&#9999; تعديل</button>
+          <button class="btn-share" id="shareProfileBtn">&#128239; Paylas</button>
+          <button class="btn-primary" id="editProfileBtn">&#9999; Duzenle</button>
         </div>
       </div>
     </div>
@@ -390,19 +427,19 @@
     <div class="modal-overlay" id="attendanceModal" role="dialog" aria-modal="true" aria-labelledby="attendanceModalTitle">
       <div class="modal">
         <div class="modal-header">
-          <h3 id="attendanceModalTitle">تسجيل الحضور</h3>
-          <button class="modal-close" id="closeAttendanceModal" aria-label="اغلاق">&#10005;</button>
+          <h3 id="attendanceModalTitle">Yoklama Kaydi</h3>
+          <button class="modal-close" id="closeAttendanceModal" aria-label="Kapat">&#10005;</button>
         </div>
         <div class="modal-body">
           <p class="modal-girl-name" id="modalGirlName"></p>
           <div class="attend-options">
-            <button class="attend-btn present" data-status="حاضر" type="button">&#10003; حاضر</button>
-            <button class="attend-btn absent" data-status="غائب" type="button">&#10007; غائب</button>
+            <button class="attend-btn present" data-status="Var" type="button">&#10003; Var</button>
+            <button class="attend-btn absent" data-status="Yok" type="button">&#10007; Yok</button>
           </div>
 
           <!-- Rating Section -->
           <div class="form-group rating-section" id="ratingSection">
-            <label>التقييم:</label>
+            <label>Degerlendirme:</label>
             <div class="stars-input" id="starsInput">
               <span class="star" data-rating="1">&#9733;</span>
               <span class="star" data-rating="2">&#9733;</span>
@@ -413,13 +450,13 @@
           </div>
 
           <div class="form-group">
-            <label for="attendanceNotes">ملاحظات:</label>
-            <textarea id="attendanceNotes" class="form-input" rows="3" placeholder="ملاحظات..."></textarea>
+            <label for="attendanceNotes">Notlar:</label>
+            <textarea id="attendanceNotes" class="form-input" rows="3" placeholder="Notlar..."></textarea>
           </div>
         </div>
         <div class="modal-footer">
-          <button class="btn-cancel" id="cancelAttendanceModal">&#10005; الغاء</button>
-          <button class="btn-primary" id="saveAttendanceEntry">&#128190; حفظ</button>
+          <button class="btn-cancel" id="cancelAttendanceModal">&#10005; Iptal</button>
+          <button class="btn-primary" id="saveAttendanceEntry">&#128190; Kaydet</button>
         </div>
       </div>
     </div>
@@ -428,8 +465,8 @@
     <div class="modal-overlay" id="activityDetailModal" role="dialog" aria-modal="true" aria-labelledby="activityDetailTitle">
       <div class="modal modal-large">
         <div class="modal-header">
-          <h3 id="activityDetailTitle">تفاصيل النشاط</h3>
-          <button class="modal-close" id="closeActivityDetailModal" aria-label="اغلاق">&#10005;</button>
+          <h3 id="activityDetailTitle">Aktivite Detayi</h3>
+          <button class="modal-close" id="closeActivityDetailModal" aria-label="Kapat">&#10005;</button>
         </div>
         <div class="modal-body">
           <div class="detail-summary-bar" id="activityDetailSummary">
@@ -442,10 +479,10 @@
           </div>
           <div class="activity-detail-tabs" id="activityDetailTabs">
             <button class="activity-detail-tab present-tab active" data-tab="present">
-              &#10003; حاضروا <span class="tab-count" id="presentTabCount">0</span>
+              &#10003; Var <span class="tab-count" id="presentTabCount">0</span>
             </button>
             <button class="activity-detail-tab absent-tab" data-tab="absent">
-              &#10007; غائبوا <span class="tab-count" id="absentTabCount">0</span>
+              &#10007; Yok <span class="tab-count" id="absentTabCount">0</span>
             </button>
           </div>
           <div class="detail-girl-list" id="activityDetailList"></div>
