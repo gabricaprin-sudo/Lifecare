@@ -19,149 +19,103 @@
   <div id="debugOverlay" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#ff0000;color:#fff;padding:8px 12px;font-size:13px;font-family:monospace;white-space:nowrap;overflow:hidden;text-align:center;opacity:0.9;">
     Debug: waiting for interaction...
   </div>
-  <script>
-    (function(){
-      var d = document.getElementById('debugOverlay');
-      function log(msg) {
-        if(d) d.textContent = 'DEBUG: ' + msg;
-        console.log('[DEBUG]', msg);
-      }
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+<script>
+  // Simple, synchronous, bulletproof handler
+  (function(){
+    var d = document.getElementById('debugOverlay');
+    function log(msg) {
+      if(d) d.textContent = 'DEBUG: ' + msg;
+      console.log('[DEBUG]', msg);
+    }
 
-      // CRITICAL: wrap everything in try-catch
+    document.addEventListener('click', function(e) {
+      var t = e.target;
+      log('CLICK ' + t.tagName + (t.id?'#'+t.id:'') + (t.className?'.'+t.className.split(' ')[0]:''));
+    }, true);
+
+    document.addEventListener('touchstart', function(e) {
+      var t = e.target;
+      log('TOUCH ' + t.tagName + (t.id?'#'+t.id:'') + (t.className?'.'+t.className.split(' ')[0]:''));
+    }, {passive:true});
+
+    log('inline script OK');
+    window.debugLog = log;
+
+    // Firebase config (compat version uses global firebase object)
+    var firebaseConfig = {
+      apiKey: "AIzaSyDjEZsPpbHq7r50pe400NUo7cvZANYeSac",
+      authDomain: "deimrpilek.firebaseapp.com",
+      projectId: "deimrpilek",
+      storageBucket: "deimrpilek.firebasestorage.app",
+      messagingSenderId: "716821036614",
+      appId: "1:716821036614:web:779ff5cb9209c10379d447",
+      measurementId: "G-XCHPH116GP"
+    };
+
+    // Initialize Firebase (compat version creates global firebase object)
+    var app = firebase.initializeApp(firebaseConfig);
+    var auth = firebase.auth();
+    var provider = new firebase.auth.GoogleAuthProvider();
+
+    log('Firebase initialized');
+    alert('Firebase hazir!');
+
+    // Handler
+    window.handleGoogleSignInInline = function(e) {
+      alert('Giris baslatiliyor...');
+      e.preventDefault();
+      e.stopPropagation();
+
+      log('Sign-In clicked');
+
       try {
-        log('inline script starting...');
+        auth.signInWithPopup(provider)
+          .then(function(result) {
+            alert('Giris basarili!');
+            log('Sign-In successful');
+          })
+          .catch(function(err) {
+            log('HATA: ' + (err.code || err.message));
+            console.error('Sign-In error:', err);
 
-        document.addEventListener('click', function(e) {
-          var t = e.target;
-          log('CLICK ' + t.tagName + (t.id?'#'+t.id:'') + (t.className?'.'+t.className.split(' ')[0]:''));
-        }, true);
-
-        document.addEventListener('touchstart', function(e) {
-          var t = e.target;
-          log('TOUCH ' + t.tagName + (t.id?'#'+t.id:'') + (t.className?'.'+t.className.split(' ')[0]:''));
-        }, {passive:true});
-
-        log('inline script OK');
-        window.debugLog = log;
-
-        alert('INLINE SCRIPT LOADED');
-
-        // Firebase config
-        var FIREBASE_CONFIG = {
-          apiKey: "AIzaSyDjEZsPpbHq7r50pe400NUo7cvZANYeSac",
-          authDomain: "deimrpilek.firebaseapp.com",
-          projectId: "deimrpilek",
-          storageBucket: "deimrpilek.firebasestorage.app",
-          messagingSenderId: "716821036614",
-          appId: "1:716821036614:web:779ff5cb9209c10379d447",
-          measurementId: "G-XCHPH116GP"
-        };
-
-        // Preload Firebase modules immediately
-        var _fbApp = null;
-        var _fbAuth = null;
-        var _fbProvider = null;
-        var _fbReady = false;
-
-        function preloadFirebase() {
-          log('Preloading Firebase...');
-          import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js')
-            .then(function(firebaseAppMod) {
-              alert('FIREBASE APP MODULE LOADED');
-              return import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js')
-                .then(function(firebaseAuthMod) {
-                  alert('FIREBASE AUTH MODULE LOADED');
-                  var initializeApp = firebaseAppMod.initializeApp;
-                  var getAuth = firebaseAuthMod.getAuth;
-                  var GoogleAuthProvider = firebaseAuthMod.GoogleAuthProvider;
-
-                  _fbApp = initializeApp(FIREBASE_CONFIG);
-                  _fbAuth = getAuth(_fbApp);
-                  _fbProvider = new GoogleAuthProvider();
-                  _fbReady = true;
-
-                  alert('FIREBASE PRELOADED OK');
-                  log('Firebase preloaded OK');
-                });
-            })
-            .catch(function(err) {
-              alert('FIREBASE PRELOAD FAILED: ' + err.message);
-              log('Firebase preload failed: ' + err.message);
-            });
-        }
-
-        preloadFirebase();
-
-        // Handler
-        window.handleGoogleSignInInline = function(e) {
-          alert('HANDLER CALLED');
-          e.preventDefault();
-          e.stopPropagation();
-
-          log('Sign-In clicked, fbReady=' + _fbReady);
-
-          if (!_fbReady || !_fbAuth) {
-            alert('FIREBASE NOT READY - waiting...');
-            log('Firebase not ready yet');
-            return;
-          }
-
-          alert('CALLING SIGNINWITHPOPUP NOW');
-
-          try {
-            _fbAuth.signInWithPopup(_fbProvider)
-              .then(function(result) {
-                alert('Giris basarili!');
-                log('Sign-In successful');
-              })
-              .catch(function(err) {
-                alert('SIGNIN ERROR: ' + (err.code || err.message));
-                log('HATA: ' + (err.code || err.message));
-                console.error('Sign-In error:', err);
-
-                var errorMessages = {
-                  'auth/popup-blocked': 'Acilir pencere engellendi!
+            var errorMessages = {
+              'auth/popup-blocked': 'Acilir pencere engellendi!
 
 Lutfen tarayici ayarlarindan acilir pencerelere izin verin.',
-                  'auth/popup-closed-by-user': 'Giris penceresi kapatildi.
+              'auth/popup-closed-by-user': 'Giris penceresi kapatildi.
 
 Tekrar deneyin.',
-                  'auth/cancelled-popup-request': 'Istek iptal edildi.
+              'auth/cancelled-popup-request': 'Istek iptal edildi.
 
 Tekrar deneyin.',
-                  'auth/network-request-failed': 'Internet baglantisi yok!
+              'auth/network-request-failed': 'Internet baglantisi yok!
 
 Lutfen baglantinizi kontrol edin.',
-                  'auth/invalid-api-key': 'API anahtari gecersiz!
+              'auth/invalid-api-key': 'API anahtari gecersiz!
 
 Yonetici ile iletisime gecin.',
-                  'auth/operation-not-supported-in-this-environment': 'Bu cihazda Google girisi desteklenmiyor!
+              'auth/operation-not-supported-in-this-environment': 'Bu cihazda Google girisi desteklenmiyor!
 
 Baska bir tarayici deneyin.',
-                  'auth/unauthorized-domain': 'Bu domain yetkili degil!
+              'auth/unauthorized-domain': 'Bu domain yetkili degil!
 
 Firebase Console > Authentication > Settings > Authorized domains ekleyin.'
-                };
+            };
 
-                var msg = errorMessages[err.code] || ('Giris basarisiz!
+            var msg = errorMessages[err.code] || ('Giris basarisiz!
 
 Hata: ' + (err.message || err.code || 'Bilinmeyen hata'));
-                alert(msg);
-              });
-          } catch(err) {
-            alert('EXCEPTION: ' + err.message);
-            log('Exception: ' + err.message);
-          }
-        };
-
-        alert('HANDLESIGNININLINE DEFINED');
-
+            alert(msg);
+          });
       } catch(err) {
-        alert('INLINE SCRIPT ERROR: ' + err.message);
-        console.error('Inline script error:', err);
+        alert('HATA: ' + err.message);
+        log('Exception: ' + err.message);
       }
-    })();
-  </script>
+    };
+  })();
+</script>
   <div id="app">
     <!-- Splash Screen -->
     <div id="splash" class="splash">
