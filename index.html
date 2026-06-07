@@ -48,42 +48,55 @@
         measurementId: "G-XCHPH116GP"
       };
 
-      // Mobile-compatible handler using setTimeout + Promise chains
+      // Preload Firebase modules immediately
+      var _fbApp = null;
+      var _fbAuth = null;
+      var _fbProvider = null;
+      var _fbReady = false;
+
+      function preloadFirebase() {
+        log('Preloading Firebase...');
+        import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js')
+          .then(function(firebaseAppMod) {
+            return import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js')
+              .then(function(firebaseAuthMod) {
+                var initializeApp = firebaseAppMod.initializeApp;
+                var getAuth = firebaseAuthMod.getAuth;
+                var GoogleAuthProvider = firebaseAuthMod.GoogleAuthProvider;
+
+                _fbApp = initializeApp(FIREBASE_CONFIG);
+                _fbAuth = getAuth(_fbApp);
+                _fbProvider = new GoogleAuthProvider();
+                _fbReady = true;
+
+                log('Firebase preloaded OK');
+              });
+          })
+          .catch(function(err) {
+            log('Firebase preload failed: ' + err.message);
+          });
+      }
+
+      // Start preloading immediately
+      preloadFirebase();
+
+      // Handler: calls signInWithPopup DIRECTLY from user interaction
       window.handleGoogleSignInInline = function(e) {
         e.preventDefault();
         e.stopPropagation();
 
-        alert('Google Sign-In baslatiliyor...');
-        log('Sign-In started');
+        log('Sign-In clicked, fbReady=' + _fbReady);
 
-        // Use setTimeout to break out of alert modal state on mobile
-        setTimeout(function() {
-          log('setTimeout fired, importing Firebase...');
+        if (!_fbReady || !_fbAuth) {
+          alert('Firebase hazir degil, lutfen bekleyin...');
+          log('Firebase not ready yet');
+          return;
+        }
 
-          import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js')
-            .then(function(firebaseAppMod) {
-              log('firebase-app loaded');
-              return import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js')
-                .then(function(firebaseAuthMod) {
-                  return { firebaseAppMod: firebaseAppMod, firebaseAuthMod: firebaseAuthMod };
-                });
-            })
-            .then(function(mods) {
-              log('Both modules loaded');
-              var initializeApp = mods.firebaseAppMod.initializeApp;
-              var getAuth = mods.firebaseAuthMod.getAuth;
-              var GoogleAuthProvider = mods.firebaseAuthMod.GoogleAuthProvider;
-              var signInWithPopup = mods.firebaseAuthMod.signInWithPopup;
-
-              var app = initializeApp(FIREBASE_CONFIG);
-              var auth = getAuth(app);
-              var provider = new GoogleAuthProvider();
-
-              log('Firebase initialized');
-              alert('Firebase hazir, giris penceresi aciliyor...');
-
-              return signInWithPopup(auth, provider);
-            })
+        // CRITICAL: must call signInWithPopup DIRECTLY inside click handler
+        // Any delay (setTimeout, Promise) will block popup on mobile
+        try {
+          _fbAuth.signInWithPopup(_fbProvider)
             .then(function(result) {
               alert('Giris basarili!');
               log('Sign-In successful');
@@ -121,7 +134,10 @@ Firebase Console > Authentication > Settings > Authorized domains ekleyin.'
 Hata: ' + (err.message || err.code || 'Bilinmeyen hata'));
               alert(msg);
             });
-        }, 100);
+        } catch(err) {
+          alert('HATA: ' + err.message);
+          log('Exception: ' + err.message);
+        }
       };
     })();
   </script>
