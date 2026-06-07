@@ -288,7 +288,7 @@ const state = {
   girls: [],
   attendanceData: {},
   currentPage: 'home',
-  selectedDay: getCurrentServiceDay() || 'السبت',
+  selectedDay: 'السبت',
   selectedActivity: 'عام',
   currentAttendanceGirlId: null,
   currentAttendanceRating: 0,
