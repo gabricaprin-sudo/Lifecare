@@ -37,22 +37,81 @@
       log('inline script OK');
       window.debugLog = log;
 
-      // Global handler for Google button
+      // Firebase config
+      var FIREBASE_CONFIG = {
+        apiKey: "AIzaSyDjEZsPpbHq7r50pe400NUo7cvZANYeSac",
+        authDomain: "deimrpilek.firebaseapp.com",
+        projectId: "deimrpilek",
+        storageBucket: "deimrpilek.firebasestorage.app",
+        messagingSenderId: "716821036614",
+        appId: "1:716821036614:web:779ff5cb9209c10379d447",
+        measurementId: "G-XCHPH116GP"
+      };
+
+      // Self-contained Google Sign-In
       window.handleGoogleSignInInline = async function(e) {
         e.preventDefault();
-        alert('1. Inline handler triggered');
-        log('Inline handler called');
+        e.stopPropagation();
+
+        alert('Google Sign-In baslatiliyor...');
+        log('Sign-In started');
+
         try {
-          if (window._realGoogleSignIn) {
-            alert('2. Calling real handler...');
-            await window._realGoogleSignIn(e);
-          } else {
-            alert('ERROR: app.js not loaded! _realGoogleSignIn is missing');
-            log('ERROR: _realGoogleSignIn missing');
-          }
+          // Import Firebase modules dynamically
+          var firebaseAppMod = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
+          var firebaseAuthMod = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+
+          var initializeApp = firebaseAppMod.initializeApp;
+          var getAuth = firebaseAuthMod.getAuth;
+          var GoogleAuthProvider = firebaseAuthMod.GoogleAuthProvider;
+          var signInWithPopup = firebaseAuthMod.signInWithPopup;
+
+          // Initialize
+          var app = initializeApp(FIREBASE_CONFIG);
+          var auth = getAuth(app);
+          var provider = new GoogleAuthProvider();
+
+          log('Firebase initialized');
+          alert('Firebase hazir, giris penceresi aciliyor...');
+
+          // Sign in
+          await signInWithPopup(auth, provider);
+
+          alert('Giris basarili!');
+          log('Sign-In successful');
+
         } catch(err) {
-          alert('ERROR in inline handler: ' + err.message);
-          log('ERROR: ' + err.message);
+          log('HATA: ' + (err.code || err.message));
+          console.error('Sign-In error:', err);
+
+          var errorMessages = {
+            'auth/popup-blocked': 'Acilir pencere engellendi!
+
+Lutfen tarayici ayarlarindan acilir pencerelere izin verin.',
+            'auth/popup-closed-by-user': 'Giris penceresi kapatildi.
+
+Tekrar deneyin.',
+            'auth/cancelled-popup-request': 'Istek iptal edildi.
+
+Tekrar deneyin.',
+            'auth/network-request-failed': 'Internet baglantisi yok!
+
+Lutfen baglantinizi kontrol edin.',
+            'auth/invalid-api-key': 'API anahtari gecersiz!
+
+Yonetici ile iletisime gecin.',
+            'auth/operation-not-supported-in-this-environment': 'Bu cihazda Google girisi desteklenmiyor!
+
+Baska bir tarayici deneyin.',
+            'auth/unauthorized-domain': 'Bu domain yetkili degil!
+
+Firebase Console > Authentication > Settings > Authorized domains ekleyin.'
+          };
+
+          var msg = errorMessages[err.code] || ('Giris basarisiz!
+
+Hata: ' + (err.message || err.code || 'Bilinmeyen hata'));
+          alert(msg);
         }
       };
     })();
