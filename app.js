@@ -47,7 +47,7 @@ let XLSX = null;
 async function initModules() {
   try {
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-    const { getAuth, GoogleAuthProvider, onAuthStateChanged, signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+    const { getAuth, GoogleAuthProvider, onAuthStateChanged, signOut, signInWithPopup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
     const { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
 
     const firebaseConfig = {
@@ -67,7 +67,11 @@ async function initModules() {
     firebaseReady = true;
 
     // Attach Firebase functions to global scope for the app
-    window._fb = { collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where, signOut };
+    // ✅ FIX: Added auth functions to window._fb
+    window._fb = {
+      collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where, signOut,
+      onAuthStateChanged, getAuth, GoogleAuthProvider, signInWithPopup
+    };
 
     // Try to load XLSX
     try {
@@ -665,7 +669,8 @@ if (DOM.googleSignIn) {
     }
     DOM.googleSignIn.classList.add('is-loading');
     try {
-      const { signInWithPopup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+      // ✅ FIX: Use signInWithPopup from window._fb instead of dynamic import
+      const { signInWithPopup } = window._fb;
       await signInWithPopup(auth, provider);
     } catch (e) {
       DOM.googleSignIn.classList.remove('is-loading');
