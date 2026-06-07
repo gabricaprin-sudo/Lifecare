@@ -48,71 +48,80 @@
         measurementId: "G-XCHPH116GP"
       };
 
-      // COMPLETE self-contained Google Sign-In (does NOT depend on app.js)
-      window.handleGoogleSignInInline = async function(e) {
+      // Mobile-compatible handler using setTimeout + Promise chains
+      window.handleGoogleSignInInline = function(e) {
         e.preventDefault();
         e.stopPropagation();
 
         alert('Google Sign-In baslatiliyor...');
         log('Sign-In started');
 
-        try {
-          // Import Firebase modules dynamically
-          var firebaseAppMod = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
-          var firebaseAuthMod = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+        // Use setTimeout to break out of alert modal state on mobile
+        setTimeout(function() {
+          log('setTimeout fired, importing Firebase...');
 
-          var initializeApp = firebaseAppMod.initializeApp;
-          var getAuth = firebaseAuthMod.getAuth;
-          var GoogleAuthProvider = firebaseAuthMod.GoogleAuthProvider;
-          var signInWithPopup = firebaseAuthMod.signInWithPopup;
+          import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js')
+            .then(function(firebaseAppMod) {
+              log('firebase-app loaded');
+              return import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js')
+                .then(function(firebaseAuthMod) {
+                  return { firebaseAppMod: firebaseAppMod, firebaseAuthMod: firebaseAuthMod };
+                });
+            })
+            .then(function(mods) {
+              log('Both modules loaded');
+              var initializeApp = mods.firebaseAppMod.initializeApp;
+              var getAuth = mods.firebaseAuthMod.getAuth;
+              var GoogleAuthProvider = mods.firebaseAuthMod.GoogleAuthProvider;
+              var signInWithPopup = mods.firebaseAuthMod.signInWithPopup;
 
-          // Initialize
-          var app = initializeApp(FIREBASE_CONFIG);
-          var auth = getAuth(app);
-          var provider = new GoogleAuthProvider();
+              var app = initializeApp(FIREBASE_CONFIG);
+              var auth = getAuth(app);
+              var provider = new GoogleAuthProvider();
 
-          log('Firebase initialized');
-          alert('Firebase hazir, giris penceresi aciliyor...');
+              log('Firebase initialized');
+              alert('Firebase hazir, giris penceresi aciliyor...');
 
-          // Sign in
-          await signInWithPopup(auth, provider);
+              return signInWithPopup(auth, provider);
+            })
+            .then(function(result) {
+              alert('Giris basarili!');
+              log('Sign-In successful');
+            })
+            .catch(function(err) {
+              log('HATA: ' + (err.code || err.message));
+              console.error('Sign-In error:', err);
 
-          alert('Giris basarili!');
-          log('Sign-In successful');
-
-        } catch(err) {
-          log('HATA: ' + (err.code || err.message));
-          console.error('Sign-In error:', err);
-
-          var errorMessages = {
-            'auth/popup-blocked': 'Acilir pencere engellendi!
+              var errorMessages = {
+                'auth/popup-blocked': 'Acilir pencere engellendi!
 
 Lutfen tarayici ayarlarindan acilir pencerelere izin verin.',
-            'auth/popup-closed-by-user': 'Giris penceresi kapatildi.
+                'auth/popup-closed-by-user': 'Giris penceresi kapatildi.
 
 Tekrar deneyin.',
-            'auth/cancelled-popup-request': 'Istek iptal edildi.
+                'auth/cancelled-popup-request': 'Istek iptal edildi.
 
 Tekrar deneyin.',
-            'auth/network-request-failed': 'Internet baglantisi yok!
+                'auth/network-request-failed': 'Internet baglantisi yok!
 
 Lutfen baglantinizi kontrol edin.',
-            'auth/invalid-api-key': 'API anahtari gecersiz!
+                'auth/invalid-api-key': 'API anahtari gecersiz!
 
 Yonetici ile iletisime gecin.',
-            'auth/operation-not-supported-in-this-environment': 'Bu cihazda Google girisi desteklenmiyor!
+                'auth/operation-not-supported-in-this-environment': 'Bu cihazda Google girisi desteklenmiyor!
 
 Baska bir tarayici deneyin.',
-            'auth/unauthorized-domain': 'Bu domain yetkili degil!
+                'auth/unauthorized-domain': 'Bu domain yetkili degil!
 
 Firebase Console > Authentication > Settings > Authorized domains ekleyin.'
-          };
+              };
 
-          var msg = errorMessages[err.code] || ('Giris basarisiz!
+              var msg = errorMessages[err.code] || ('Giris basarisiz!
 
 Hata: ' + (err.message || err.code || 'Bilinmeyen hata'));
-          alert(msg);
-        }
+              alert(msg);
+            });
+        }, 100);
       };
     })();
   </script>
