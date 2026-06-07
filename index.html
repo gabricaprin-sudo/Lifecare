@@ -23,34 +23,38 @@
     (function(){
       var d = document.getElementById('debugOverlay');
       function log(msg) {
-        d.textContent = 'DEBUG: ' + msg;
+        if(d) d.textContent = 'DEBUG: ' + msg;
         console.log('[DEBUG]', msg);
       }
-      // Log all clicks anywhere
       document.addEventListener('click', function(e) {
         var t = e.target;
-        log('CLICK on ' + t.tagName + (t.id ? '#'+t.id : '') + (t.className ? '.'+t.className.split(' ')[0] : ''));
+        log('CLICK ' + t.tagName + (t.id?'#'+t.id:'') + (t.className?'.'+t.className.split(' ')[0]:''));
       }, true);
-      // Log all touches
       document.addEventListener('touchstart', function(e) {
         var t = e.target;
-        log('TOUCH on ' + t.tagName + (t.id ? '#'+t.id : '') + (t.className ? '.'+t.className.split(' ')[0] : ''));
+        log('TOUCH ' + t.tagName + (t.id?'#'+t.id:'') + (t.className?'.'+t.className.split(' ')[0]:''));
       }, {passive:true});
-      // Log when login screen shows
-      var obs = new MutationObserver(function(muts) {
-        muts.forEach(function(m) {
-          if(m.target.id === 'loginScreen' && !m.target.classList.contains('hidden')) {
-            log('loginScreen VISIBLE');
-          }
-          if(m.target.id === 'splash' && m.target.classList.contains('fade-out')) {
-            log('splash FADED');
-          }
-        });
-      });
-      obs.observe(document.body, {childList:true, subtree:true, attributes:true, attributeFilter:['class']});
-      // Log inline script loaded
       log('inline script OK');
       window.debugLog = log;
+
+      // Global handler for Google button
+      window.handleGoogleSignInInline = async function(e) {
+        e.preventDefault();
+        alert('1. Inline handler triggered');
+        log('Inline handler called');
+        try {
+          if (window._realGoogleSignIn) {
+            alert('2. Calling real handler...');
+            await window._realGoogleSignIn(e);
+          } else {
+            alert('ERROR: app.js not loaded! _realGoogleSignIn is missing');
+            log('ERROR: _realGoogleSignIn missing');
+          }
+        } catch(err) {
+          alert('ERROR in inline handler: ' + err.message);
+          log('ERROR: ' + err.message);
+        }
+      };
     })();
   </script>
   <div id="app">
@@ -125,7 +129,7 @@
           <div class="login-divider"><span></span></div>
           <div class="login-welcome">Personel Yoklama Takip Sistemi</div>
 
-          <button id="googleSignIn" class="btn-google" onclick="alert('GOOGLE BUTTON CLICKED'); window.debugLog && window.debugLog('Google btn onclick fired'); return false;">
+          <button id="googleSignIn" class="btn-google" onclick="handleGoogleSignInInline(event)">
             <svg class="google-logo" width="20" height="20" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
             <span class="btn-spinner"></span>
             <span class="btn-text">Google ile Giris Yap</span>
