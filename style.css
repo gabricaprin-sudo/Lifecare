@@ -1103,6 +1103,55 @@ body {
 .girls-filter-row { display: flex; gap: 10px; margin-bottom: 14px; align-items: center; }
 .girls-filter-row .grade-filter-btns { flex: 1; margin-bottom: 0; }
 
+
+/* ============================================================
+   TIME FILTER TABS (Stats Page)
+   ============================================================ */
+.time-filter-tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+.time-filter-tab {
+  flex: 1;
+  min-width: 60px;
+  padding: 12px 10px;
+  background: white;
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  font-family: 'Tajawal', sans-serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: all 0.2s;
+  min-height: var(--tap-target);
+  touch-action: manipulation;
+  text-align: center;
+  white-space: nowrap;
+}
+.time-filter-tab.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  box-shadow: 0 4px 12px rgba(26,39,68,0.25);
+}
+.time-filter-tab:active {
+  transform: scale(0.97);
+}
+[data-theme="dark"] .time-filter-tab {
+  background: var(--surface);
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+[data-theme="dark"] .time-filter-tab.active {
+  background: var(--primary-light);
+  color: white;
+  border-color: var(--primary-light);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
 /* ============================================================
    CALENDAR PAGE
    ============================================================ */
@@ -1809,4 +1858,4 @@ input[type="date"], input[type="month"] {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
-}
+   }
