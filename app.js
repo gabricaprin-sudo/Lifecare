@@ -2,6 +2,8 @@
 // Yoklama Sistemi - Personel Devam Takip (Cevrimdisi Destekli)
 // ============================================================
 
+console.log('=== app.js yuklenmeye basladi ===');
+
 // ============================================================
 // GUVENLIK: Global hata yakalayici + splash yedek
 // ============================================================
@@ -42,6 +44,7 @@ let firebaseReady = false;
 let XLSX = null;
 
 async function initModules() {
+  console.log('initModules() basladi...');
   try {
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
     const { getAuth, GoogleAuthProvider, onAuthStateChanged, signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
@@ -72,7 +75,7 @@ async function initModules() {
       console.warn('XLSX kutuphanesi yuklenemedi:', xlsxErr);
     }
 
-    console.log('Firebase basarili sekilde baslatildi');
+    console.log('Firebase basarili sekilde baslatildi. auth:', !!auth, 'provider:', !!provider);
     return true;
   } catch (e) {
     console.error('Firebase baslatilamadi:', e);
@@ -145,6 +148,8 @@ const DOM = {
   darkModeToggle: $('darkModeToggle'), darkToggleSwitch: $('darkToggleSwitch'),
   shareProfileBtn: $('shareProfileBtn'), editProfileBtn: $('editProfileBtn')
 };
+
+console.log('DOM cache olusturuldu. googleSignIn:', !!DOM.googleSignIn);
 
 // ============================================================
 // CEVRIMDISI SENKRON KUYRUK
@@ -603,10 +608,10 @@ function hideSplash() {
 }
 
 // ============================================================
-// DEMO GIRIS (iframe/test ortami icin)
+// DEMO GIRIS - Global erisim icin window'a ekle
 // ============================================================
 function demoLogin() {
-  console.log('Demo girisi yapiliyor...');
+  console.log('demoLogin() cagrildi!');
   const demoUser = {
     uid: 'demo_' + Date.now(),
     displayName: 'Demo Kullanici',
@@ -623,6 +628,7 @@ function demoLogin() {
   }
   showToast('Demo modunda giris yaptiniz. Veriler yerel kaydedilecek.', 'warning');
 }
+window.demoLogin = demoLogin;
 
 // ============================================================
 // KIMLIK DOGRULAMA
@@ -630,7 +636,7 @@ function demoLogin() {
 let authListenersAttached = false;
 
 async function initAuth() {
-  console.log('initAuth basladi...', { firebaseReady, hasFb: !!window._fb, hasAuth: !!auth });
+  console.log('initAuth() basladi...', { firebaseReady, hasFb: !!window._fb, hasAuth: !!auth });
   if (!firebaseReady || !window._fb || !auth) {
     console.error('Firebase kullanilamiyor - auth eksik');
     hideSplash();
@@ -676,12 +682,15 @@ async function initAuth() {
 }
 
 // ============================================================
-// GOOGLE SIGN IN - Tamamen Yeniden Yazilmis
+// GOOGLE SIGN IN - Guclendirilmis
 // ============================================================
 if (DOM.googleSignIn) {
-  DOM.googleSignIn.addEventListener('click', async () => {
-    console.log('Google Sign-In butonuna tiklandi');
-    
+  console.log('Google Sign-In event listener ekleniyor...');
+  DOM.googleSignIn.addEventListener('click', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    console.log('Google Sign-In butonuna tiklandi!');
+
     if (!firebaseReady || !window._fb || !auth || !provider) {
       console.error('Firebase hazir degil:', { firebaseReady, auth: !!auth, provider: !!provider, _fb: !!window._fb });
       showToast('Sistem hazir degil. Lutfen sayfayi yenileyin.', 'error');
@@ -689,17 +698,15 @@ if (DOM.googleSignIn) {
     }
 
     DOM.googleSignIn.classList.add('is-loading');
-    
+
     try {
       console.log('signInWithPopup deneniyor...');
       const { signInWithPopup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
       const result = await signInWithPopup(auth, provider);
       console.log('Popup basarili:', result.user?.email);
-      // is-loading kalkacak (onAuthStateChanged -> showApp)
     } catch (e) {
       console.error('Popup hatasi:', e.code, e.message);
-      
-      // Popup engellendiyse veya iframe'deyse redirect dene
+
       if (e.code === 'auth/popup-blocked' || e.code === 'auth/operation-not-supported-in-this-environment') {
         console.log('Popup basarisiz, signInWithRedirect deneniyor...');
         try {
@@ -724,13 +731,16 @@ if (DOM.googleSignIn) {
         const userMsg = errorMessages[e.code] || ('Giris basarisiz: ' + (e.message || e.code));
         showToast(userMsg, 'error');
       }
-      
+
       DOM.googleSignIn.classList.remove('is-loading');
     }
   });
+  console.log('Google Sign-In event listener eklendi.');
+} else {
+  console.error('DOM.googleSignIn bulunamadi! Event listener eklenemedi.');
 }
 
-// Redirect sonucunu kontrol et (sayfa geri dondugunde)
+// Redirect sonucunu kontrol et
 async function checkRedirectResult() {
   if (!firebaseReady || !auth) {
     console.log('Redirect kontrolu atlandi - Firebase hazir degil');
@@ -753,7 +763,6 @@ async function checkRedirectResult() {
 if (DOM.signOutBtn) {
   DOM.signOutBtn.addEventListener('click', async () => {
     if (state.currentUser?.isDemo) {
-      // Demo kullanici cikisi
       state.currentUser = null;
       state.appInitialized = false;
       showLogin();
@@ -796,11 +805,10 @@ function showApp(user) {
 }
 
 function showLogin() {
-  console.log('showLogin cagrildi');
+  console.log('showLogin() cagrildi');
   if (DOM.loginScreen) DOM.loginScreen.classList.remove('hidden');
   if (DOM.mainApp) DOM.mainApp.classList.add('hidden');
-  
-  // Demo giris butonu ekle (eger yoksa)
+
   const card = document.getElementById('loginCard');
   if (card && !document.getElementById('demoSignIn')) {
     const demoBtn = document.createElement('button');
@@ -810,10 +818,12 @@ function showLogin() {
     demoBtn.style.background = '#f8f9fa';
     demoBtn.style.borderColor = '#d0d4dc';
     demoBtn.innerHTML = `<span style="font-size:20px">&#128100;</span><span style="font-size:14px">Demo ile Giris Yap (Test)</span>`;
-    demoBtn.addEventListener('click', (e) => {
+    demoBtn.onclick = function(e) {
       e.preventDefault();
-      demoLogin();
-    });
+      e.stopPropagation();
+      console.log('Demo butonu inline onclick calisti');
+      window.demoLogin();
+    };
     card.appendChild(demoBtn);
     console.log('Demo giris butonu eklendi');
   }
