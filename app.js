@@ -613,19 +613,6 @@ function hideSplash() {
 // ============================================================
 let authListenersAttached = false;
 
-// Hata mesajlari (global)
-const AUTH_ERROR_MESSAGES = {
-  'auth/popup-blocked': 'Acilir pencere engellendi. Lutfen acilir pencerelere izin verin.',
-  'auth/popup-closed-by-user': 'Giris penceresi kapatildi.',
-  'auth/cancelled-popup-request': 'Giris istegi iptal edildi.',
-  'auth/network-request-failed': 'Ag baglantisi basarisiz. Internet baglantinizi kontrol edin.',
-  'auth/invalid-api-key': 'API anahtari gecersiz.',
-  'auth/operation-not-supported-in-this-environment': 'Bu ortamda islem desteklenmiyor.',
-  'auth/unauthorized-domain': 'Bu domain yetkili degil. Firebase Console > Authentication > Settings > Authorized domains kismina ekleyin.',
-  'auth/redirect-cancelled-by-user': 'Giris iptal edildi.',
-  'auth/argument-error': 'Kimlik dogrulama parametreleri hatali.'
-};
-
 async function initAuth() {
   if (!firebaseReady || !window._fb) {
     console.error('Firebase kullanilamiyor');
@@ -635,23 +622,7 @@ async function initAuth() {
   }
 
   try {
-    const { onAuthStateChanged, getRedirectResult } = window._fb;
-
-    // Yonlendirme sonucunu isle (signInWithRedirect sonrasi)
-    try {
-      const result = await getRedirectResult(auth);
-      if (result && result.user) {
-        console.log('Yonlendirme ile giris basarili:', result.user.email);
-        if (DOM.googleSignIn) DOM.googleSignIn.classList.remove('is-loading');
-      }
-    } catch (redirectErr) {
-      console.error('Yonlendirme hatasi:', redirectErr.code, redirectErr.message);
-      if (redirectErr.code !== 'auth/redirect-cancelled-by-user') {
-        const userMsg = AUTH_ERROR_MESSAGES[redirectErr.code] || ('Giris basarisiz: ' + (redirectErr.code || redirectErr.message));
-        showToast(userMsg, 'error');
-      }
-      if (DOM.googleSignIn) DOM.googleSignIn.classList.remove('is-loading');
-    }
+    const { onAuthStateChanged } = window._fb;
 
     if (authListenersAttached) return;
     authListenersAttached = true;
@@ -681,26 +652,52 @@ async function initAuth() {
   }
 }
 
-if (DOM.googleSignIn) {
-  DOM.googleSignIn.addEventListener('click', async () => {
-    if (!firebaseReady || !window._fb) {
-      showToast('Internet baglantisi yok - cevrimdisi modu kullanin', 'warning');
-      return;
-    }
-    DOM.googleSignIn.classList.add('is-loading');
-    try {
-      // signInWithRedirect: Popup yerine yonlendirme kullanir (daha guvenilir)
-      const { signInWithRedirect } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
-      await signInWithRedirect(auth, provider);
-      // Bu satir calismayacak cunku sayfa yonlendirilecek
-    } catch (e) {
-      DOM.googleSignIn.classList.remove('is-loading');
-      console.error('Giris hatasi:', e.code, e.message);
-      const userMsg = AUTH_ERROR_MESSAGES[e.code] || ('Giris basarisiz: ' + (e.message || e.code));
-      showToast(userMsg, 'error');
+// Fallback: eger DOM.googleSignIn null ise (script head'de calisti), 
+// tekrar dene sayfa tam yuklendiginde
+if (!DOM.googleSignIn) {
+  window.addEventListener('DOMContentLoaded', () => {
+    const btn = document.getElementById('googleSignIn');
+    if (btn && !btn._hasClickHandler) {
+      console.log('DOMContentLoaded: googleSignIn bulundu, delegation zaten aktif.');
     }
   });
 }
+
+// ============================================================
+// KIMLIK DOGRULAMA - Google Sign-In (Delegation Pattern)
+// ============================================================
+document.addEventListener('click', async (e) => {
+  const btn = e.target.closest('#googleSignIn');
+  if (!btn) return;
+
+  if (!firebaseReady || !window._fb) {
+    showToast('Sistem hazirlaniyor, lutfen bekleyin...', 'warning');
+    const ok = await initModules();
+    if (!ok || !firebaseReady) {
+      showToast('Internet baglantisi yok - cevrimdisi modu kullanin', 'error');
+      return;
+    }
+  }
+
+  btn.classList.add('is-loading');
+  try {
+    const { signInWithPopup } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
+    await signInWithPopup(auth, provider);
+  } catch (e) {
+    btn.classList.remove('is-loading');
+    console.error('Giris hatasi:', e.code, e.message);
+    const errorMessages = {
+      'auth/popup-blocked': 'Acilir pencere engellendi. Lutfen acilir pencerelere izin verin.',
+      'auth/popup-closed-by-user': 'Giris penceresi kapatildi.',
+      'auth/cancelled-popup-request': 'Giris istegi iptal edildi.',
+      'auth/network-request-failed': 'Ag baglantisi basarisiz. Internet baglantinizi kontrol edin.',
+      'auth/invalid-api-key': 'API anahtari gecersiz.',
+      'auth/operation-not-supported-in-this-environment': 'Bu ortamda islem desteklenmiyor.'
+    };
+    const userMsg = errorMessages[e.code] || ('Giris basarisiz: ' + (e.message || e.code));
+    showToast(userMsg, 'error');
+  }
+});
 
 if (DOM.signOutBtn) {
   DOM.signOutBtn.addEventListener('click', async () => {
@@ -2782,6 +2779,15 @@ async function bootstrap() {
 
   // Firebase modullerini baslat
   const modulesReady = await initModules();
+
+  // DEBUG: Log initialization status
+  console.log('=== YOKLAMA SISTEMI DEBUG ===');
+  console.log('Firebase ready:', firebaseReady);
+  console.log('modulesReady:', modulesReady);
+  console.log('googleSignIn element:', document.getElementById('googleSignIn'));
+  console.log('DOM.googleSignIn cached:', DOM.googleSignIn);
+  console.log('navigator.onLine:', navigator.onLine);
+  console.log('===========================');
 
   if (modulesReady) {
     await initAuth();
