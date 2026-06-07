@@ -24,7 +24,6 @@ function hideSplashForced() {
     splash.classList.add('fade-out');
     setTimeout(() => splash.remove(), 500);
   }
-  // Show login screen as fallback if app isn't initialized
   setTimeout(() => {
     const loginScreen = document.getElementById('loginScreen');
     const mainApp = document.getElementById('mainApp');
@@ -43,7 +42,6 @@ let firebaseApp, auth, db, provider;
 let firebaseReady = false;
 let XLSX = null;
 
-// Module imports with error handling
 async function initModules() {
   try {
     const { initializeApp } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js');
@@ -66,14 +64,13 @@ async function initModules() {
     provider = new GoogleAuthProvider();
     firebaseReady = true;
 
-    // Attach Firebase functions to global scope for the app
-    // ✅ FIX: Added auth functions to window._fb
+    // ✅ FIX: Store EVERYTHING in window._fb including auth, provider, db
     window._fb = {
       collection, doc, setDoc, getDocs, deleteDoc, query, orderBy, onSnapshot, writeBatch, where, signOut,
-      onAuthStateChanged, getAuth, GoogleAuthProvider, signInWithPopup
+      onAuthStateChanged, getAuth, GoogleAuthProvider, signInWithPopup,
+      auth, provider, db, firebaseApp
     };
 
-    // Try to load XLSX
     try {
       const xlsxMod = await import('https://cdn.sheetjs.com/xlsx-0.20.1/package/xlsx.mjs');
       XLSX = xlsxMod;
@@ -163,7 +160,6 @@ const OfflineQueue = {
   lastOnline: true,
 
   async init() {
-    // Load any previously queued items from IndexedDB
     try {
       const saved = await IDB.getAll('pendingSync');
       this.queue = saved || [];
@@ -321,12 +317,10 @@ const state = {
 };
 
 const HISTORY_PAGE_SIZE = 30;
-// Work days: Saturday through Thursday (6 days). Friday is off.
 const SERVICE_DAYS = { 'السبت': true, 'الأحد': true, 'الاثنين': true, 'الثلاثاء': true, 'الأربعاء': true, 'الخميس': true };
 const SERVICE_DAY_NUMBERS = [0, 1, 2, 3, 4, 6];
 const DAY_NAMES = ['الأحد','الاثنين','الثلاثاء','الأربعاء','الخميس','الجمعة','السبت'];
 
-// Map JS day number (0=Sun..6=Sat) to Arabic work day name
 const JS_DAY_TO_ARABIC = {
   0: 'الأحد',
   1: 'الاثنين',
@@ -494,7 +488,7 @@ function csvEscape(v) {
 }
 
 // ============================================================
-// INDEXEDDB — wrapper for offline history storage
+// INDEXEDDB
 // ============================================================
 const IDB = {
   db: null,
@@ -617,12 +611,12 @@ function hideSplash() {
 }
 
 // ============================================================
-// AUTH — Fixed with better error handling
+// AUTH — Fixed
 // ============================================================
 let authListenersAttached = false;
 
 async function initAuth() {
-  if (!firebaseReady || !window._fb) {
+  if (!firebaseReady || !window._fb || !window._fb.auth) {
     console.error('Firebase not available');
     hideSplash();
     showLogin();
@@ -632,11 +626,10 @@ async function initAuth() {
   try {
     const { onAuthStateChanged } = window._fb;
 
-    // Prevent duplicate listeners
     if (authListenersAttached) return;
     authListenersAttached = true;
 
-    onAuthStateChanged(auth, async (user) => {
+    onAuthStateChanged(window._fb.auth, async (user) => {
       hideSplash();
       if (!user) {
         state.currentUser = null;
@@ -663,19 +656,24 @@ async function initAuth() {
 
 if (DOM.googleSignIn) {
   DOM.googleSignIn.addEventListener('click', async () => {
-    if (!firebaseReady || !window._fb) {
+    console.log('Google sign-in clicked');
+    console.log('firebaseReady:', firebaseReady);
+    console.log('window._fb:', window._fb);
+
+    if (!firebaseReady || !window._fb || !window._fb.auth || !window._fb.provider || !window._fb.signInWithPopup) {
+      console.warn('Firebase not ready for sign-in');
       showToast('الانترنت غير متاح - استخدم وضع عدم الاتصال', 'warning');
       return;
     }
+
     DOM.googleSignIn.classList.add('is-loading');
     try {
-      // ✅ FIX: Use signInWithPopup from window._fb instead of dynamic import
-      const { signInWithPopup } = window._fb;
-      await signInWithPopup(auth, provider);
+      console.log('Calling signInWithPopup...');
+      await window._fb.signInWithPopup(window._fb.auth, window._fb.provider);
+      console.log('signInWithPopup succeeded');
     } catch (e) {
       DOM.googleSignIn.classList.remove('is-loading');
       console.error('Sign-in error:', e.code, e.message);
-      // Map known error codes to user-friendly messages
       const errorMessages = {
         'auth/popup-blocked': 'تم حجب النافذة المنبثقة. الرجاء السماح بالنوافذ المنبثقة.',
         'auth/popup-closed-by-user': 'تم اغلاق نافذة تسجيل الدخول.',
@@ -692,18 +690,16 @@ if (DOM.googleSignIn) {
 
 if (DOM.signOutBtn) {
   DOM.signOutBtn.addEventListener('click', async () => {
-    if (!firebaseReady || !window._fb) {
+    if (!firebaseReady || !window._fb || !window._fb.auth) {
       state.currentUser = null;
       state.appInitialized = false;
       showLogin();
       return;
     }
     try {
-      const { signOut } = window._fb;
-      await signOut(auth);
+      await window._fb.signOut(window._fb.auth);
     } catch (e) {
       console.error('Sign-out error:', e);
-      // Force logout locally even if Firebase fails
       state.currentUser = null;
       state.appInitialized = false;
       showLogin();
@@ -751,7 +747,6 @@ let dataListenersInitialized = false;
 async function loadData() {
   try {
     if (!firebaseReady || !window._fb) return;
-    // Prevent duplicate listeners on re-auth
     if (dataListenersInitialized) return;
     dataListenersInitialized = true;
 
@@ -789,7 +784,6 @@ async function loadData() {
       if (changed) scheduleRender();
     });
 
-    // Listen to history collection and sync to IndexedDB
     _onSnapshot(_query(_collection(db, 'history'), _orderBy('timestamp', 'desc')), async snap => {
       let changed = false;
       for (const change of snap.docChanges()) {
@@ -886,7 +880,7 @@ function closeDrawer() {
 }
 
 // ============================================================
-// HOME PAGE — Fixed
+// HOME PAGE
 // ============================================================
 function renderHome() {
   const now = new Date();
@@ -914,7 +908,6 @@ function renderHome() {
   const absentGirlIds = new Set();
   const todayRecordsByGirl = {};
 
-  // Collect all attendance records for today
   Object.values(state.attendanceData).forEach(a => {
     if (a.date !== dateStr) return;
     if (!activeGirlIds.has(a.girlId)) return;
@@ -922,7 +915,6 @@ function renderHome() {
     todayRecordsByGirl[a.girlId].push(a);
   });
 
-  // Check each girl's status for today
   activeGirls.forEach(g => {
     const records = todayRecordsByGirl[g.id];
     if (records && records.length > 0) {
@@ -930,7 +922,6 @@ function renderHome() {
       if (hasAnyPresent) presentGirlIds.add(g.id);
       else absentGirlIds.add(g.id);
     } else if (isService) {
-      // Service day with NO records = auto counted as absent
       absentGirlIds.add(g.id);
     }
   });
@@ -938,7 +929,6 @@ function renderHome() {
   if (DOM.statPresentToday) DOM.statPresentToday.textContent = presentGirlIds.size;
   if (DOM.statAbsentToday) DOM.statAbsentToday.textContent = absentGirlIds.size;
 
-  // === Top Attendees This Month ===
   const presentDatesByGirl = {};
   activeGirls.forEach(g => presentDatesByGirl[g.id] = new Set());
   Object.values(state.attendanceData).forEach(a => {
@@ -969,7 +959,6 @@ function renderHome() {
     }
   }
 
-  // === Needs Followup (consecutive absences) ===
   if (DOM.needsFollowup) {
     const followupGirls = [];
     activeGirls.forEach(g => {
@@ -1174,7 +1163,6 @@ function initTimestampToggle() {
 
   if (!toggle) return;
 
-  // Default: auto mode
   timestampMode = 'auto';
   updateTimestampUI();
 
@@ -1239,7 +1227,7 @@ function resetTimestampInputs() {
 }
 
 // ============================================================
-// SAVE GIRL — with offline support & custom timestamp
+// SAVE GIRL
 // ============================================================
 if (DOM.saveGirlBtn) {
   DOM.saveGirlBtn.addEventListener('click', async () => {
@@ -1278,7 +1266,6 @@ if (DOM.saveGirlBtn) {
 
       await logHistory(state.editingGirlId ? 'تعديل موظف' : 'اضافة موظف', `${name} - موظف`, customTimestamp);
 
-      // Online: save directly. Offline: queue for sync.
       if (navigator.onLine && firebaseReady && window._fb) {
         try {
           await window._fb.setDoc(window._fb.doc(db, 'girls', id), girlData);
@@ -1411,7 +1398,7 @@ ${g.grade}
 }
 
 // ============================================================
-// ATTENDANCE PAGE — Fixed
+// ATTENDANCE PAGE
 // ============================================================
 function getCurrentServiceDay() {
   const dayOfWeek = new Date().getDay();
@@ -1438,13 +1425,11 @@ function renderAttendancePage() {
   const date = DOM.attendanceDate.value;
   const activeGirls = state.girls.filter(g => !g.isDeleted);
 
-  // Check if any records exist for this date
   const hasAnyRecordsForDate = activeGirls.some(g => {
     const key = `${g.id}_${date}_عام`;
     return state.attendanceData[key];
   });
 
-  // Auto-mark absent on service days if no records exist yet for this date
   if (activeGirls.length > 0 && !hasAnyRecordsForDate && isServiceDayDate(date) && !state.attendancePageInitialized) {
     state.attendancePageInitialized = true;
     markAllAbsentForDate(date);
@@ -1504,7 +1489,6 @@ async function toggleAttendanceStatus(girlId, girlName, date) {
 
   state.attendanceData[key] = rec;
 
-  // Online: save directly. Offline: queue for sync.
   if (navigator.onLine && firebaseReady && window._fb) {
     try {
       await window._fb.setDoc(window._fb.doc(db, 'attendance', key), rec);
@@ -1557,7 +1541,6 @@ async function markAllAbsentForDate(date) {
     state.attendanceData[rec.id] = rec;
   }
 
-  // Online: batch save to Firestore. Offline: queue batch for sync.
   if (navigator.onLine && firebaseReady && window._fb && batchRecords.length > 0) {
     try {
       const batch = window._fb.writeBatch(db);
@@ -1611,7 +1594,6 @@ async function selectAllStatus(status) {
     state.attendanceData[key] = rec;
   }
 
-  // Online: batch save to Firestore. Offline: queue batch for sync.
   if (navigator.onLine && firebaseReady && window._fb && batchRecords.length > 0) {
     try {
       const batch = window._fb.writeBatch(db);
@@ -1713,7 +1695,6 @@ async function deleteAttendanceRecord(key) {
     onOk: async () => {
       try {
         delete state.attendanceData[key];
-        // Online: delete directly. Offline: queue for sync.
         if (navigator.onLine && firebaseReady && window._fb) {
           try {
             await window._fb.deleteDoc(window._fb.doc(db, 'attendance', key));
@@ -1739,7 +1720,7 @@ async function deleteAttendanceRecord(key) {
 }
 
 // ============================================================
-// ATTENDANCE ENTRY MODAL (with rating)
+// ATTENDANCE ENTRY MODAL
 // ============================================================
 function openAttendanceEntry(girlId, girlName, date) {
   state.currentAttendanceGirlId = girlId;
@@ -1748,7 +1729,6 @@ function openAttendanceEntry(girlId, girlName, date) {
   if (DOM.modalGirlName) DOM.modalGirlName.textContent = girlName;
   if (DOM.attendanceNotes) DOM.attendanceNotes.value = '';
 
-  // Reset stars
   $$('#starsInput .star').forEach(s => s.classList.remove('selected'));
 
   const key = `${girlId}_${date}_عام`;
@@ -1756,7 +1736,6 @@ function openAttendanceEntry(girlId, girlName, date) {
   if (existing) {
     $$('.attend-btn').forEach(b => b.classList.toggle('selected', b.dataset.status === existing.status));
     if (DOM.attendanceNotes) DOM.attendanceNotes.value = existing.notes || '';
-    // Set rating
     if (existing.rating > 0) {
       state.currentAttendanceRating = existing.rating;
       $$('#starsInput .star').forEach(s => {
@@ -1779,7 +1758,6 @@ $$('.attend-btn').forEach(b => {
   });
 });
 
-// Star rating handlers
 $$('#starsInput .star').forEach(star => {
   star.addEventListener('click', () => {
     const rating = parseInt(star.dataset.rating);
@@ -1814,7 +1792,6 @@ if (DOM.saveAttendanceEntry) {
 
     state.attendanceData[key] = rec;
 
-    // Online: save directly. Offline: queue for sync.
     if (navigator.onLine && firebaseReady && window._fb) {
       try {
         await window._fb.setDoc(window._fb.doc(db, 'attendance', key), rec);
@@ -1839,7 +1816,7 @@ if (DOM.saveAttendanceEntry) {
 }
 
 // ============================================================
-// CALENDAR PAGE — Fixed
+// CALENDAR PAGE
 // ============================================================
 function renderCalendar() {
   const year = state.calendarDate.getFullYear();
@@ -1868,7 +1845,6 @@ function renderCalendar() {
   html += '</div>';
   if (DOM.calendarGrid) DOM.calendarGrid.innerHTML = html;
 
-  // Auto-show today's details if today is in the current month view
   const now = new Date();
   if (year === now.getFullYear() && month === now.getMonth()) {
     currentDayDetailDate = todayStr;
@@ -2143,7 +2119,7 @@ if (DOM.timeFilterTabs) {
 }
 
 // ============================================================
-// HISTORY PAGE — Fixed
+// HISTORY PAGE
 // ============================================================
 async function renderHistory(append = false) {
   const el = DOM.historyList;
@@ -2154,11 +2130,9 @@ async function renderHistory(append = false) {
     el.innerHTML = '<div class="empty-state">جارٍ التحميل...</div>';
     state.historyOffset = 0;
 
-    // Collect logs from all sources
     const allLogs = [];
     const seenIds = new Set();
 
-    // 1. Try Firestore first (online)
     if (firebaseReady && window._fb) {
       try {
         const snap = await window._fb.getDocs(
@@ -2174,7 +2148,6 @@ async function renderHistory(append = false) {
       } catch (e) { console.warn('Firestore history load failed:', e); }
     }
 
-    // 2. Also load from IndexedDB (covers offline entries)
     try {
       const idbLogs = await IDB.getAll('history');
       idbLogs.forEach(log => {
@@ -2185,10 +2158,8 @@ async function renderHistory(append = false) {
       });
     } catch (e) { console.warn('IDB history load failed:', e); }
 
-    // Sort newest first
     allLogs.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
 
-    // Apply filter
     state.historyAllLogs = filter ? allLogs.filter(l => l.action && l.action.includes(filter)) : allLogs;
   }
 
@@ -2227,10 +2198,8 @@ if (DOM.clearHistoryBtn) {
       msg: 'هل انت متأكد؟ سيتم مسح كل السجلات نهائياً ولا يمكن التراجع.',
       okLabel: 'مسح الكل',
       onOk: async () => {
-        // Clear IndexedDB
         try { await IDB.clear('history'); } catch (e) { console.warn('IDB clear failed:', e); }
         state.historyAllLogs = [];
-        // Clear Firestore
         if (firebaseReady && window._fb) {
           try {
             const snap = await window._fb.getDocs(window._fb.collection(db, 'history'));
@@ -2267,9 +2236,7 @@ async function logHistory(action, detail, customTimestamp) {
     byEmail: state.currentUser?.email || '',
     timestamp: ts
   };
-  // Save to IndexedDB first (always works, even offline)
   try { await IDB.add('history', log); } catch (e) { console.warn('IDB history save failed:', e); }
-  // Save to Firestore or queue for sync
   if (navigator.onLine && firebaseReady && window._fb) {
     try { await window._fb.setDoc(window._fb.doc(db, 'history', log.id), log); }
     catch (e) {
@@ -2281,13 +2248,12 @@ async function logHistory(action, detail, customTimestamp) {
 }
 
 // ============================================================
-// EXPORT PAGE — Fixed
+// EXPORT PAGE
 // ============================================================
 function renderExport() {
   if (DOM.exportMonth && !DOM.exportMonth.value) DOM.exportMonth.value = DateUtil.toStr();
 }
 
-// Excel export
 if (DOM.exportCSV) {
   DOM.exportCSV.addEventListener('click', () => {
     if (!XLSX) { showToast('مكتبة Excel غير محملة، حاول تحديث الصفحة', 'error'); return; }
@@ -2347,7 +2313,6 @@ if (DOM.exportCSV) {
       ws['!dir'] = 'rtl';
       XLSX.utils.book_append_sheet(wb, ws, 'ملخص الشهر');
 
-      // === Sheet 2: Detailed Daily Records ===
       exportAtt.sort((a, b) => {
         if (a.date !== b.date) return a.date.localeCompare(b.date);
         return (a.activity || '').localeCompare(b.activity || '', 'ar');
@@ -2755,12 +2720,11 @@ if (girlsSearchInput) {
 setupDelegation();
 
 // ============================================================
-// BOOTSTRAP — Fixed with proper error handling
+// BOOTSTRAP
 // ============================================================
 async function bootstrap() {
   initDarkMode();
 
-  // Initialize IndexedDB first (always, even without Firebase)
   try {
     await IDB.init();
     state.idb = true;
@@ -2769,25 +2733,20 @@ async function bootstrap() {
     state.idb = false;
   }
 
-  // Initialize offline sync queue
   try {
     await OfflineQueue.init();
   } catch (e) {
     console.warn('OfflineQueue init failed:', e);
   }
 
-  // Initialize timestamp toggle UI
   initTimestampToggle();
 
-  // Set initial online status
   updateOnlineStatus();
 
-  // Initialize Firebase modules
   const modulesReady = await initModules();
 
   if (modulesReady) {
     await initAuth();
-    // Try syncing any pending operations from previous offline sessions
     OfflineQueue.trySync();
   } else {
     console.error('Firebase failed to load');
