@@ -910,23 +910,53 @@ function navigateTo(page) {
   closeDrawer();
 }
 
-$$('.nav-btn').forEach(btn => btn.addEventListener('click', () => navigateTo(btn.dataset.page)));
-$$('.menu-item[data-page]').forEach(item => item.addEventListener('click', e => {
-  e.preventDefault();
-  navigateTo(item.dataset.page);
-}));
+// Event delegation for nav buttons (works even if elements added after script load)
+document.addEventListener('click', function(e) {
+  var navBtn = e.target.closest('.nav-btn');
+  if (navBtn && navBtn.dataset.page) {
+    navigateTo(navBtn.dataset.page);
+    return;
+  }
+  var menuItem = e.target.closest('.menu-item[data-page]');
+  if (menuItem) {
+    e.preventDefault();
+    navigateTo(menuItem.dataset.page);
+    return;
+  }
+  var menuBtn = e.target.closest('#menuBtn');
+  if (menuBtn) {
+    openDrawer();
+    return;
+  }
+  var overlay = e.target.closest('#drawerOverlay');
+  if (overlay) {
+    closeDrawer();
+    return;
+  }
+});
 
+// Fallback direct listeners (if elements exist at load time)
 if (DOM.menuBtn) DOM.menuBtn.addEventListener('click', openDrawer);
 if (DOM.drawerOverlay) DOM.drawerOverlay.addEventListener('click', closeDrawer);
 
+// Expose navigateTo globally for HTML onclick
+window.navigateTo = navigateTo;
+
 function openDrawer() {
-  if (DOM.drawer) DOM.drawer.classList.add('open');
-  if (DOM.drawerOverlay) DOM.drawerOverlay.classList.add('show');
+  var drawer = document.getElementById('drawer');
+  var overlay = document.getElementById('drawerOverlay');
+  if (drawer) drawer.classList.add('open');
+  if (overlay) overlay.classList.add('show');
 }
 function closeDrawer() {
-  if (DOM.drawer) DOM.drawer.classList.remove('open');
-  if (DOM.drawerOverlay) DOM.drawerOverlay.classList.remove('show');
+  var drawer = document.getElementById('drawer');
+  var overlay = document.getElementById('drawerOverlay');
+  if (drawer) drawer.classList.remove('open');
+  if (overlay) overlay.classList.remove('show');
 }
+// Expose globally for HTML onclick attributes
+window.openDrawer = openDrawer;
+window.closeDrawer = closeDrawer;
 
 // ============================================================
 // ANA SAYFA
