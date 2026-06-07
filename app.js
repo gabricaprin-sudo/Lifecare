@@ -664,17 +664,27 @@ if (!DOM.googleSignIn) {
 }
 
 // ============================================================
-// KIMLIK DOGRULAMA - Google Sign-In (Delegation Pattern)
+// KIMLIK DOGRULAMA - Google Sign-In (Delegation + Touch Support)
 // ============================================================
-document.addEventListener('click', async (e) => {
+
+async function handleGoogleSignIn(e) {
+  // Prevent double-firing on devices that trigger both touch and click
+  if (e.type === 'touchstart') {
+    e.preventDefault();
+  }
+
   const btn = e.target.closest('#googleSignIn');
   if (!btn) return;
+
+  // Immediate feedback for mobile users
+  showToast('Giris baslatiliyor...', 'info');
 
   if (!firebaseReady || !window._fb) {
     showToast('Sistem hazirlaniyor, lutfen bekleyin...', 'warning');
     const ok = await initModules();
     if (!ok || !firebaseReady) {
       showToast('Internet baglantisi yok - cevrimdisi modu kullanin', 'error');
+      btn.classList.remove('is-loading');
       return;
     }
   }
@@ -697,7 +707,11 @@ document.addEventListener('click', async (e) => {
     const userMsg = errorMessages[e.code] || ('Giris basarisiz: ' + (e.message || e.code));
     showToast(userMsg, 'error');
   }
-});
+}
+
+// Support both click (desktop) and touchstart (mobile) for instant response
+document.addEventListener('click', handleGoogleSignIn);
+document.addEventListener('touchstart', handleGoogleSignIn, { passive: false });
 
 if (DOM.signOutBtn) {
   DOM.signOutBtn.addEventListener('click', async () => {
