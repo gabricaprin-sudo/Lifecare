@@ -1,5 +1,4 @@
 console.log("app.js loaded successfully");
-alert("app.js loaded OK");
 // ============================================================
 // Yoklama Sistemi - Personel Devam Takip (Cevrimdisi Destekli)
 // ============================================================
@@ -670,8 +669,6 @@ if (!DOM.googleSignIn) {
 // ============================================================
 
 async function handleGoogleSignIn(e) {
-  // EMERGENCY: alert always works, even if toast fails
-  alert('3. Real handler started (app.js OK)');
   console.log('handleGoogleSignIn called');
 
   const btn = e.target.closest ? e.target.closest('#googleSignIn') : document.getElementById('googleSignIn');
@@ -721,14 +718,9 @@ async function handleGoogleSignIn(e) {
 
 // Store real handler so inline HTML script can call it
 window._realGoogleSignIn = handleGoogleSignIn;
-alert('4. _realGoogleSignIn registered');
 
-// Override the inline fallback with the real one (runs after app.js loads)
-window.handleGoogleSignInInline = async function(e) {
-  e.preventDefault();
-  e.stopPropagation();
-  await handleGoogleSignIn(e);
-};
+// NOTE: Do NOT override handleGoogleSignInInline - the inline HTML handler is the primary one
+// window.handleGoogleSignInInline is defined in index.html and works independently
 
 // Fallback: bind via addEventListener after page load
 window.addEventListener('load', () => {
