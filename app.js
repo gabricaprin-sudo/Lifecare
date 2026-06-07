@@ -2816,24 +2816,26 @@ async function bootstrap() {
   // Firebase modullerini baslat
   const modulesReady = await initModules();
 
-  // DEBUG: Log initialization status
-  console.log('=== YOKLAMA SISTEMI DEBUG ===');
-  console.log('Firebase ready:', firebaseReady);
-  console.log('modulesReady:', modulesReady);
-  console.log('googleSignIn element:', document.getElementById('googleSignIn'));
-  console.log('DOM.googleSignIn cached:', DOM.googleSignIn);
-  console.log('navigator.onLine:', navigator.onLine);
-  console.log('===========================');
-
   if (modulesReady) {
     await initAuth();
-    // Onceki cevrimdisi oturumlardan bekleyen islemleri senkronize etmeyi dene
     OfflineQueue.trySync();
   } else {
     console.error('Firebase yuklenemedi');
     hideSplash();
     showLogin();
   }
+
+  // Global hook for inline script to trigger app init after manual sign-in
+  window._triggerAppInit = async function(user) {
+    console.log('_triggerAppInit called with user:', user?.email);
+    state.currentUser = user;
+    showApp(user);
+    if (!state.appInitialized) {
+      state.appInitialized = true;
+      await loadData();
+      renderPage();
+    }
+  };
 }
 
 bootstrap();
