@@ -1,10 +1,7 @@
 // ============================================================
-// NOTIFICATION SYSTEM — Dashboard Compatible Version
+// NOTIFICATION SYSTEM — Dashboard Compatible Version (FIXED)
 // Displays notifications from Firestore 'notifications' collection
 // ============================================================
-
-// Import Firebase functions (dashboard version)
-import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 const NotificationSystem = {
   container: null,
@@ -17,6 +14,11 @@ const NotificationSystem = {
   init(dbInstance) {
     this.db = dbInstance;
     this.firebaseReady = !!dbInstance;
+
+    if (!this.firebaseReady) {
+      console.warn('NotificationSystem: No db instance provided');
+      return;
+    }
 
     // Load dismissed notifications from localStorage
     try {
@@ -61,7 +63,7 @@ const NotificationSystem = {
     this.listenForNotifications();
   },
 
-  listenForNotifications() {
+  async listenForNotifications() {
     if (!this.firebaseReady || !this.db) {
       console.warn('Firebase not ready, retrying notifications in 3s...');
       setTimeout(() => this.listenForNotifications(), 3000);
@@ -69,6 +71,9 @@ const NotificationSystem = {
     }
 
     try {
+      // Dynamically import Firebase functions when needed
+      const { collection, query, where, orderBy, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+
       const q = query(
         collection(this.db, 'notifications'),
         where('active', '==', true),
@@ -90,9 +95,52 @@ const NotificationSystem = {
         }
       }, err => {
         console.error('Notification listener error:', err);
+        // If the query fails (e.g., missing index), try without orderBy
+        if (err.code === 'failed-precondition' || err.message?.includes('index')) {
+          console.log('Retrying without orderBy...');
+          this.listenForNotificationsSimple();
+        }
       });
     } catch (e) {
       console.error('Failed to init notification listener:', e);
+    }
+  },
+
+  // Fallback listener without orderBy (in case index is missing)
+  async listenForNotificationsSimple() {
+    if (!this.firebaseReady || !this.db) return;
+
+    try {
+      const { collection, query, where, onSnapshot } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
+
+      const q = query(
+        collection(this.db, 'notifications'),
+        where('active', '==', true)
+      );
+
+      this.unsub = onSnapshot(q, (snap) => {
+        const notifs = [];
+        snap.forEach(doc => notifs.push({ id: doc.id, ...doc.data() }));
+
+        // Sort manually by createdAt
+        notifs.sort((a, b) => {
+          const aTime = a.createdAt?.toMillis?.() || a.createdAt?.seconds * 1000 || 0;
+          const bTime = b.createdAt?.toMillis?.() || b.createdAt?.seconds * 1000 || 0;
+          return bTime - aTime;
+        });
+
+        const activeNotifs = notifs.filter(n => !this.dismissedNotifs.has(n.id));
+
+        if (activeNotifs.length > 0) {
+          this.showNotification(activeNotifs[0]);
+        } else {
+          this.hideNotification();
+        }
+      }, err => {
+        console.error('Simple notification listener error:', err);
+      });
+    } catch (e) {
+      console.error('Failed to init simple notification listener:', e);
     }
   },
 
