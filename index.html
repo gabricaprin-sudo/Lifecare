@@ -416,6 +416,7 @@
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   </style>
+<base target="_blank">
 </head>
 <body>
 
@@ -783,8 +784,17 @@
         hideLoading();
 
         // Initialize Notification System for live preview
-        NotificationSystem.init(db);
-        console.log('✅ Notification system initialized');
+        try {
+          if (NotificationSystem && typeof NotificationSystem.init === 'function') {
+            NotificationSystem.init(db);
+            console.log('✅ Notification system initialized');
+          } else {
+            console.warn('NotificationSystem not available');
+          }
+        } catch (e) {
+          console.error('Notification system init failed:', e);
+          showToast('⚠️ نظام الإشعارات غير متاح', 'warning');
+        }
       } else {
         authOverlay.style.display = 'flex';
         dashboard.style.display = 'none';
@@ -793,29 +803,81 @@
 
     // Load Dashboard Data
     async function loadDashboardData() {
-      try {
-        // Load stats
-        const girlsSnap = await getDocs(collection(db, 'girls'));
-        const attSnap = await getDocs(collection(db, 'attendance'));
-        const notifSnap = await getDocs(query(collection(db, 'notifications'), where('active', '==', true)));
+      let errors = [];
 
-        document.getElementById('statGirls').textContent = girlsSnap.size;
-        document.getElementById('statAttendance').textContent = attSnap.size;
-        document.getElementById('statNotifs').textContent = notifSnap.size;
+      try {
+        // Load girls count
+        let girlsCount = 0;
+        try {
+          const girlsSnap = await getDocs(collection(db, 'girls'));
+          girlsCount = girlsSnap.size;
+        } catch (e) {
+          console.error('Error loading girls:', e);
+          errors.push('المخدومات: ' + e.message);
+          girlsCount = 0;
+        }
+        document.getElementById('statGirls').textContent = girlsCount;
+
+        // Load attendance count
+        let attCount = 0;
+        try {
+          const attSnap = await getDocs(collection(db, 'attendance'));
+          attCount = attSnap.size;
+        } catch (e) {
+          console.error('Error loading attendance:', e);
+          errors.push('الحضور: ' + e.message);
+          attCount = 0;
+        }
+        document.getElementById('statAttendance').textContent = attCount;
+
+        // Load active notifications count
+        let notifCount = 0;
+        try {
+          const notifQuery = query(collection(db, 'notifications'), where('active', '==', true));
+          const notifSnap = await getDocs(notifQuery);
+          notifCount = notifSnap.size;
+        } catch (e) {
+          console.error('Error loading notifications:', e);
+          errors.push('الإشعارات: ' + e.message);
+          // If the query fails (e.g., missing index), try without where
+          try {
+            const allNotifSnap = await getDocs(collection(db, 'notifications'));
+            notifCount = allNotifSnap.size;
+          } catch (e2) {
+            notifCount = 0;
+          }
+        }
+        document.getElementById('statNotifs').textContent = notifCount;
         document.getElementById('statUsers').textContent = '1';
 
-        // Load notifications
-        await loadNotifications();
+        // Load notifications list
+        try {
+          await loadNotifications();
+        } catch (e) {
+          console.error('Error loading notifications list:', e);
+          errors.push('قائمة الإشعارات: ' + e.message);
+        }
 
         // Load settings
-        await loadSettings();
+        try {
+          await loadSettings();
+        } catch (e) {
+          console.error('Error loading settings:', e);
+          errors.push('الإعدادات: ' + e.message);
+        }
 
         // Update last update time
         document.getElementById('lastUpdate').textContent = new Date().toLocaleString('ar-EG');
 
+        // Show consolidated error if any
+        if (errors.length > 0) {
+          console.error('Dashboard load errors:', errors);
+          showToast('⚠️ بعض البيانات لم تحمل: ' + errors[0], 'warning');
+        }
+
       } catch (e) {
-        console.error('Load error:', e);
-        showToast('خطأ في تحميل البيانات', 'error');
+        console.error('Critical load error:', e);
+        showToast('❌ خطأ في تحميل البيانات: ' + (e.message || 'خطأ غير معروف'), 'error');
       }
     }
 
