@@ -79,6 +79,34 @@
     }
     .logout-btn:hover { background: rgba(255,255,255,0.25); }
 
+    /* App Link Badge */
+    .app-link-bar {
+      background: linear-gradient(135deg, rgba(232,160,32,0.15) 0%, rgba(232,160,32,0.05) 100%);
+      border: 2px solid var(--accent);
+      border-radius: var(--radius);
+      padding: 16px 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .app-link-bar .app-link-info { display: flex; align-items: center; gap: 12px; flex: 1; }
+    .app-link-bar .app-link-icon { font-size: 28px; }
+    .app-link-bar .app-link-text { font-size: 15px; font-weight: 700; color: var(--primary); }
+    .app-link-bar .app-link-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+    .app-link-btn {
+      background: var(--accent); color: var(--primary);
+      border: none; border-radius: 12px; padding: 12px 24px;
+      font-family: 'Tajawal', sans-serif; font-size: 14px; font-weight: 700;
+      cursor: pointer; transition: all 0.2s;
+      display: inline-flex; align-items: center; gap: 8px;
+      text-decoration: none;
+      box-shadow: 0 4px 12px rgba(232,160,32,0.3);
+    }
+    .app-link-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(232,160,32,0.4); }
+
     /* Stats Cards */
     .stats-row {
       display: grid;
@@ -194,30 +222,50 @@
     .toggle-switch.on::after { transform: translateX(-24px); }
     .toggle-label { font-size: 15px; font-weight: 600; }
 
-    /* Notifications List */
+    /* Notifications List - ENHANCED DESIGN */
     .notif-list { display: flex; flex-direction: column; gap: 12px; }
     .notif-item {
-      background: var(--bg); border-radius: 12px; padding: 16px;
-      display: flex; align-items: flex-start; gap: 12px;
-      transition: all 0.2s; border-right: 4px solid var(--accent);
+      background: var(--bg); border-radius: 16px; padding: 20px;
+      display: flex; align-items: flex-start; gap: 16px;
+      transition: all 0.25s ease;
+      border-right: 5px solid var(--accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
-    .notif-item:hover { background: #e8ecf4; }
+    .notif-item:hover {
+      background: #e8ecf4;
+      transform: translateX(-4px);
+      box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+    }
     .notif-item.info { border-color: var(--blue); }
     .notif-item.success { border-color: var(--green); }
     .notif-item.warning { border-color: var(--orange); }
     .notif-item.error { border-color: var(--red); }
     .notif-item.feature { border-color: var(--purple); }
-    .notif-item .notif-icon { font-size: 24px; flex-shrink: 0; }
-    .notif-item .notif-content { flex: 1; }
-    .notif-item .notif-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
-    .notif-item .notif-text { font-size: 14px; color: var(--text-muted); line-height: 1.5; }
-    .notif-item .notif-meta {
-      font-size: 12px; color: var(--text-muted); margin-top: 8px;
-      display: flex; gap: 12px; flex-wrap: wrap;
+
+    .notif-icon-wrap {
+      width: 48px; height: 48px; border-radius: 14px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 24px; flex-shrink: 0;
+      background: rgba(232,160,32,0.12);
     }
-    .notif-item .notif-actions { display: flex; gap: 6px; flex-shrink: 0; }
+    .notif-item.info .notif-icon-wrap { background: rgba(52,152,219,0.12); }
+    .notif-item.success .notif-icon-wrap { background: rgba(46,204,113,0.12); }
+    .notif-item.warning .notif-icon-wrap { background: rgba(243,156,18,0.12); }
+    .notif-item.error .notif-icon-wrap { background: rgba(231,76,60,0.12); }
+    .notif-item.feature .notif-icon-wrap { background: rgba(155,89,182,0.12); }
+
+    .notif-item .notif-content { flex: 1; min-width: 0; }
+    .notif-item .notif-title { font-size: 16px; font-weight: 800; margin-bottom: 6px; color: var(--primary); }
+    .notif-item .notif-text { font-size: 14px; color: var(--text-muted); line-height: 1.6; }
+    .notif-item .notif-meta {
+      font-size: 12px; color: var(--text-muted); margin-top: 10px;
+      display: flex; gap: 12px; flex-wrap: wrap; align-items: center;
+    }
+    .notif-item .notif-actions {
+      display: flex; gap: 8px; flex-shrink: 0; flex-direction: column;
+    }
     .notif-btn {
-      width: 36px; height: 36px; border: none; border-radius: 8px;
+      width: 40px; height: 40px; border: none; border-radius: 10px;
       cursor: pointer; font-size: 16px;
       display: flex; align-items: center; justify-content: center;
       transition: all 0.2s;
@@ -230,9 +278,28 @@
     .notif-btn.toggle { background: rgba(46,204,113,0.1); color: var(--green); }
     .notif-btn.toggle:hover { background: var(--green); color: white; }
 
+    /* Enhanced Preview Banner */
+    .preview-banner {
+      background: linear-gradient(135deg, var(--accent) 0%, #d4a017 100%);
+      color: var(--primary); border-radius: 16px;
+      padding: 20px 24px; margin-bottom: 16px;
+      font-weight: 700; display: none; align-items: center; gap: 14px;
+      box-shadow: 0 8px 24px rgba(232,160,32,0.3);
+      animation: bannerSlideIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+    @keyframes bannerSlideIn {
+      from { opacity: 0; transform: translateY(-20px) scale(0.95); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .preview-banner.show { display: flex; }
+    .preview-banner .banner-icon { font-size: 32px; }
+    .preview-banner .banner-text { flex: 1; }
+    .preview-banner .banner-title { font-size: 16px; font-weight: 800; margin-bottom: 4px; }
+    .preview-banner .banner-body { font-size: 14px; opacity: 0.9; font-weight: 600; }
+
     /* Badge */
     .badge {
-      display: inline-block; padding: 4px 10px; border-radius: 8px;
+      display: inline-block; padding: 5px 12px; border-radius: 10px;
       font-size: 12px; font-weight: 700;
     }
     .badge-info { background: rgba(52,152,219,0.1); color: #2980b9; }
@@ -246,8 +313,8 @@
       position: fixed; bottom: 24px; left: 50%;
       transform: translateX(-50%);
       background: var(--primary); color: white;
-      padding: 14px 28px; border-radius: 12px;
-      font-size: 15px; font-weight: 600; z-index: 1000;
+      padding: 16px 32px; border-radius: 14px;
+      font-size: 15px; font-weight: 700; z-index: 1000;
       box-shadow: var(--shadow-lg);
       transition: all 0.3s; opacity: 0; pointer-events: none;
     }
@@ -266,6 +333,9 @@
       .dash-grid { grid-template-columns: 1fr; }
       .dash-header { flex-direction: column; text-align: center; }
       .stats-row { grid-template-columns: 1fr 1fr; }
+      .app-link-bar { flex-direction: column; text-align: center; }
+      .notif-item { flex-direction: column; gap: 12px; }
+      .notif-item .notif-actions { flex-direction: row; width: 100%; justify-content: flex-end; }
     }
 
     /* Loading */
@@ -303,15 +373,6 @@
     .auth-box .cross-icon {
       font-size: 48px; margin-bottom: 16px; color: var(--accent);
     }
-
-    /* Preview Banner */
-    .preview-banner {
-      background: linear-gradient(135deg, var(--accent) 0%, #d4a017 100%);
-      color: var(--primary); border-radius: 12px;
-      padding: 16px 20px; margin-bottom: 16px;
-      font-weight: 700; display: none; align-items: center; gap: 10px;
-    }
-    .preview-banner.show { display: flex; }
 
     /* Empty state */
     .empty-state {
@@ -416,7 +477,6 @@
     ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
     ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
   </style>
-<base target="_blank">
 </head>
 <body>
 
@@ -461,12 +521,26 @@
       </div>
     </div>
 
+    <!-- App Link Bar -->
+    <div class="app-link-bar">
+      <div class="app-link-info">
+        <div class="app-link-icon">&#128242;</div>
+        <div>
+          <div class="app-link-text">رابط تطبيق المخدومات</div>
+          <div class="app-link-sub">الصفحة الرئيسية للمستخدمين — يجب فصلها عن لوحة التحكم</div>
+        </div>
+      </div>
+      <a href="./app.html" class="app-link-btn" target="_blank">
+        <span>&#128279;</span> فتح التطبيق
+      </a>
+    </div>
+
     <!-- Stats -->
     <div class="stats-row">
       <div class="stat-box blue" onclick="showSection('girls')">
         <div class="stat-icon">&#128101;</div>
         <div class="stat-number" id="statGirls">0</div>
-        <div class="stat-label">عدد المخدومات</div>
+        <div class="stat-label">عدد المخدومات (الفعلي)</div>
       </div>
       <div class="stat-box green" onclick="showSection('attendance')">
         <div class="stat-icon">&#128203;</div>
@@ -564,8 +638,11 @@
           <!-- Preview Tab -->
           <div class="tab-content" id="tab-preview">
             <div class="preview-banner" id="previewBanner">
-              <span>&#128227;</span>
-              <span id="previewText">هذا إشعار تجريبي</span>
+              <span class="banner-icon">&#128227;</span>
+              <div class="banner-text">
+                <div class="banner-title" id="previewTitle">عنوان الإشعار</div>
+                <div class="banner-body" id="previewBody">محتوى الإشعار...</div>
+              </div>
             </div>
             <p style="color:var(--text-muted); text-align:center; padding:20px;">
               &#128161; المعاينة تظهر كيف سيبدو الإشعار في التطبيق<br>
@@ -667,7 +744,7 @@
             </div>
             <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--bg); border-radius:10px;">
               <span style="font-weight:600;">&#128290; إصدار التطبيق</span>
-              <span style="font-size:13px; color:var(--text-muted);">v3.0</span>
+              <span style="font-size:13px; color:var(--text-muted);">v3.1</span>
             </div>
           </div>
         </div>
@@ -698,6 +775,8 @@
             <p>&#128064; <strong>المعاينة:</strong> شوف الإشعار قبل ما تنشره في التطبيق</p>
             <p>&#9881;&#65039; <strong>الإعدادات:</strong> تحكم في ميزات التطبيق من هنا</p>
             <p>&#128227; <strong>الإشعار بيظهر:</strong> في أعلى التطبيق أول ما المستخدم يفتحه</p>
+            <hr style="border:none; border-top:1px solid var(--border); margin:12px 0;">
+            <p>&#128242; <strong>رابط التطبيق:</strong> التطبيق الرئيسي للمستخدمين بيفتح من <code style="background:var(--bg); padding:2px 8px; border-radius:6px;">app.html</code> مش من نفس الصفحة</p>
           </div>
         </div>
       </div>
@@ -784,17 +863,8 @@
         hideLoading();
 
         // Initialize Notification System for live preview
-        try {
-          if (NotificationSystem && typeof NotificationSystem.init === 'function') {
-            NotificationSystem.init(db);
-            console.log('✅ Notification system initialized');
-          } else {
-            console.warn('NotificationSystem not available');
-          }
-        } catch (e) {
-          console.error('Notification system init failed:', e);
-          showToast('⚠️ نظام الإشعارات غير متاح', 'warning');
-        }
+        NotificationSystem.init(db);
+        console.log('✅ Notification system initialized');
       } else {
         authOverlay.style.display = 'flex';
         dashboard.style.display = 'none';
@@ -803,81 +873,35 @@
 
     // Load Dashboard Data
     async function loadDashboardData() {
-      let errors = [];
-
       try {
-        // Load girls count
-        let girlsCount = 0;
-        try {
-          const girlsSnap = await getDocs(collection(db, 'girls'));
-          girlsCount = girlsSnap.size;
-        } catch (e) {
-          console.error('Error loading girls:', e);
-          errors.push('المخدومات: ' + e.message);
-          girlsCount = 0;
-        }
-        document.getElementById('statGirls').textContent = girlsCount;
+        // Load stats - FIXED: Filter out deleted girls for accurate count
+        const girlsSnap = await getDocs(collection(db, 'girls'));
+        const attSnap = await getDocs(collection(db, 'attendance'));
+        const notifSnap = await getDocs(query(collection(db, 'notifications'), where('active', '==', true)));
 
-        // Load attendance count
-        let attCount = 0;
-        try {
-          const attSnap = await getDocs(collection(db, 'attendance'));
-          attCount = attSnap.size;
-        } catch (e) {
-          console.error('Error loading attendance:', e);
-          errors.push('الحضور: ' + e.message);
-          attCount = 0;
-        }
-        document.getElementById('statAttendance').textContent = attCount;
+        // FIXED: Count only non-deleted girls (isDeleted !== true)
+        const activeGirlsCount = girlsSnap.docs.filter(doc => {
+          const data = doc.data();
+          return data.isDeleted !== true;
+        }).length;
 
-        // Load active notifications count
-        let notifCount = 0;
-        try {
-          const notifQuery = query(collection(db, 'notifications'), where('active', '==', true));
-          const notifSnap = await getDocs(notifQuery);
-          notifCount = notifSnap.size;
-        } catch (e) {
-          console.error('Error loading notifications:', e);
-          errors.push('الإشعارات: ' + e.message);
-          // If the query fails (e.g., missing index), try without where
-          try {
-            const allNotifSnap = await getDocs(collection(db, 'notifications'));
-            notifCount = allNotifSnap.size;
-          } catch (e2) {
-            notifCount = 0;
-          }
-        }
-        document.getElementById('statNotifs').textContent = notifCount;
+        document.getElementById('statGirls').textContent = activeGirlsCount;
+        document.getElementById('statAttendance').textContent = attSnap.size;
+        document.getElementById('statNotifs').textContent = notifSnap.size;
         document.getElementById('statUsers').textContent = '1';
 
-        // Load notifications list
-        try {
-          await loadNotifications();
-        } catch (e) {
-          console.error('Error loading notifications list:', e);
-          errors.push('قائمة الإشعارات: ' + e.message);
-        }
+        // Load notifications
+        await loadNotifications();
 
         // Load settings
-        try {
-          await loadSettings();
-        } catch (e) {
-          console.error('Error loading settings:', e);
-          errors.push('الإعدادات: ' + e.message);
-        }
+        await loadSettings();
 
         // Update last update time
         document.getElementById('lastUpdate').textContent = new Date().toLocaleString('ar-EG');
 
-        // Show consolidated error if any
-        if (errors.length > 0) {
-          console.error('Dashboard load errors:', errors);
-          showToast('⚠️ بعض البيانات لم تحمل: ' + errors[0], 'warning');
-        }
-
       } catch (e) {
-        console.error('Critical load error:', e);
-        showToast('❌ خطأ في تحميل البيانات: ' + (e.message || 'خطأ غير معروف'), 'error');
+        console.error('Load error:', e);
+        showToast('خطأ في تحميل البيانات', 'error');
       }
     }
 
@@ -907,7 +931,7 @@
 
       container.innerHTML = notifications.map(n => `
         <div class="notif-item ${n.type || 'info'}">
-          <div class="notif-icon">${getNotifIcon(n.type)}</div>
+          <div class="notif-icon-wrap">${getNotifIcon(n.type)}</div>
           <div class="notif-content">
             <div class="notif-title">${escapeHtml(n.title)}</div>
             <div class="notif-text">${escapeHtml(n.body)}</div>
@@ -983,12 +1007,13 @@
       }
     });
 
-    // Preview
+    // Preview - ENHANCED: Shows title and body separately
     document.getElementById('previewNotifBtn').addEventListener('click', () => {
       const title = document.getElementById('notifTitle').value.trim() || 'عنوان الإشعار';
       const body = document.getElementById('notifBody').value.trim() || 'محتوى الإشعار...';
 
-      document.getElementById('previewText').textContent = `${title}: ${body}`;
+      document.getElementById('previewTitle').textContent = title;
+      document.getElementById('previewBody').textContent = body;
       document.getElementById('previewBanner').classList.add('show');
       switchTab('preview');
 
