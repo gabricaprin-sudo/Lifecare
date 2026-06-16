@@ -720,6 +720,9 @@
     const { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js');
     const { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, where } = await import('https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js');
 
+    // Import Notification System
+    const { NotificationSystem } = await import('./notification-system.js');
+
     const app = initializeApp(FIREBASE_CONFIG);
     const auth = getAuth(app);
     const db = getFirestore(app);
@@ -778,6 +781,10 @@
         showLoading();
         await loadDashboardData();
         hideLoading();
+
+        // Initialize Notification System for live preview
+        NotificationSystem.init(db);
+        console.log('✅ Notification system initialized');
       } else {
         authOverlay.style.display = 'flex';
         dashboard.style.display = 'none';

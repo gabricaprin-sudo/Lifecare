@@ -1,16 +1,23 @@
 // ============================================================
-// NOTIFICATION SYSTEM — Admin Dashboard Integration
+// NOTIFICATION SYSTEM — Dashboard Compatible Version
 // Displays notifications from Firestore 'notifications' collection
-// Add this to the END of app.js (before the closing /* === End of App === */)
 // ============================================================
+
+// Import Firebase functions (dashboard version)
+import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, getDoc, where } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
 
 const NotificationSystem = {
   container: null,
   currentNotif: null,
   unsub: null,
   dismissedNotifs: new Set(),
+  db: null,
+  firebaseReady: false,
 
-  init() {
+  init(dbInstance) {
+    this.db = dbInstance;
+    this.firebaseReady = !!dbInstance;
+
     // Load dismissed notifications from localStorage
     try {
       const dismissed = JSON.parse(localStorage.getItem('dismissedNotifs') || '[]');
@@ -55,20 +62,20 @@ const NotificationSystem = {
   },
 
   listenForNotifications() {
-    if (!firebaseReady || !db) {
+    if (!this.firebaseReady || !this.db) {
       console.warn('Firebase not ready, retrying notifications in 3s...');
       setTimeout(() => this.listenForNotifications(), 3000);
       return;
     }
 
     try {
-      const q = FB.query(
-        FB.collection(db, 'notifications'),
-        FB.where('active', '==', true),
-        FB.orderBy('createdAt', 'desc')
+      const q = query(
+        collection(this.db, 'notifications'),
+        where('active', '==', true),
+        orderBy('createdAt', 'desc')
       );
 
-      this.unsub = FB.onSnapshot(q, (snap) => {
+      this.unsub = onSnapshot(q, (snap) => {
         const notifs = [];
         snap.forEach(doc => notifs.push({ id: doc.id, ...doc.data() }));
 
@@ -124,7 +131,7 @@ const NotificationSystem = {
     const style = typeColors[notif.type] || typeColors.info;
 
     const dismissBtn = notif.dismissible ? 
-      `<button onclick="NotificationSystem.dismiss('${notif.id}')" style="
+      `<button id="notif-dismiss-btn" style="
         background: rgba(255,255,255,0.2);
         border: none;
         color: white;
@@ -152,7 +159,7 @@ const NotificationSystem = {
       ">المزيد &#10132;</a>` : '';
 
     this.container.innerHTML = `
-      <div style="
+      <div id="notif-banner-inner" style="
         background: ${style.bg};
         color: white;
         border-radius: 16px;
@@ -169,13 +176,21 @@ const NotificationSystem = {
       ">
         <div style="font-size: 28px; flex-shrink: 0; line-height: 1;">${style.icon}</div>
         <div style="flex: 1; min-width: 0;">
-          <div style="font-size: 15px; font-weight: 700; margin-bottom: 4px; line-height: 1.3;">${esc(notif.title)}</div>
-          <div style="font-size: 13px; opacity: 0.9; line-height: 1.5;">${esc(notif.body)}</div>
+          <div style="font-size: 15px; font-weight: 700; margin-bottom: 4px; line-height: 1.3;">${this.esc(notif.title)}</div>
+          <div style="font-size: 13px; opacity: 0.9; line-height: 1.5;">${this.esc(notif.body)}</div>
           ${link}
         </div>
         ${dismissBtn}
       </div>
     `;
+
+    // Attach dismiss handler
+    if (notif.dismissible) {
+      const dismissBtnEl = document.getElementById('notif-dismiss-btn');
+      if (dismissBtnEl) {
+        dismissBtnEl.addEventListener('click', () => this.dismiss(notif.id));
+      }
+    }
   },
 
   hideNotification() {
@@ -194,11 +209,17 @@ const NotificationSystem = {
     } catch (e) { console.warn('Failed to save dismissed notification:', e); }
 
     // Animate out
-    const banner = this.container.querySelector('div');
+    const banner = document.getElementById('notif-banner-inner');
     if (banner) {
       banner.style.animation = 'notifSlideOut 0.3s ease forwards';
       setTimeout(() => this.hideNotification(), 300);
     }
+  },
+
+  esc(str) {
+    const div = document.createElement('div');
+    div.textContent = str || '';
+    return div.innerHTML;
   },
 
   destroy() {
@@ -207,16 +228,4 @@ const NotificationSystem = {
   }
 };
 
-// Auto-initialize after app is ready
-// Hook into the existing bootstrap function
-const _originalBootstrap = bootstrap;
-bootstrap = async function() {
-  await _originalBootstrap();
-  // Initialize notifications after a short delay to ensure Firebase is ready
-  setTimeout(() => {
-    if (typeof NotificationSystem !== 'undefined' && firebaseReady) {
-      NotificationSystem.init();
-      console.log('✅ Notification system initialized');
-    }
-  }, 2000);
-};
+export { NotificationSystem };
